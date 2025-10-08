@@ -1,0 +1,10 @@
+pandas>=1.5.0
+tqdm>=4.64.0
+matplotlib>=3.6.0
+numpy>=1.21.0
+scikit-plots>=0.3.7
+scikit-learn>=1.1.0
+openpyxl>=3.0.10
+seaborn>=0.11.0
+torch>=1.13.0
+SciencePlots
