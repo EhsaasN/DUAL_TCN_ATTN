@@ -11,9 +11,8 @@ This repository is a supplement to our preprint paper "DTAAD: Dual Tcn-Attention
 ## Installation
 This code needs Python-3.7 or higher.
 ```bash
-$ git clone https://github.com/Yu-Lingrui/DTAAD  # clone
-$ cd DTTAD
-$ pip3 install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu113
+$ git clone https://github.com/EhsaasN/DUAL_TCN_ATTN.git  # clone
+$ cd DUAL_TCN_ATTN
 $ pip3 install -r requirements.txt
 ```
 
