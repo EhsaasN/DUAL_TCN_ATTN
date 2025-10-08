@@ -20,18 +20,18 @@ $ pip3 install -r requirements.txt
 ## Dataset Preprocessing
 Preprocess all datasets using the command
 ```bash
-$ python3 preprocess.py SMAP MSL SWaT WADI SMD MSDS UCR MBA NAB
+$ python preprocess.py SMAP MSL SWaT SMD UCR MBA NAB
 ```
 Distribution rights to some datasets may not be available. Check the readme files in the `./data/` folder for more details. If you want to ignore a dataset, remove it from the above command to ensure that the preprocessing does not fail.
 
 ## Result Reproduction
 To run a model on a dataset, run the following command:
 ```bash
-$ python3 main.py --model <model> --dataset <dataset> --retrain
+$ python main.py --model <model> --dataset <dataset> --retrain
 ```
 where `<model>` can be either of 'DTAAD', 'GDN', 'MAD_GAN', 'MTAD_GAT', 'MSCRED', 'USAD', 'OmniAnomaly', 'LSTM_AD', and dataset can be one of 'SMAP', 'MSL', 'SWaT', 'WADI', 'SMD', 'MSDS', 'MBA', 'UCR' and 'NAB. To train with 20% data, use the following command 
 ```bash
-python3 main.py --model <model> --dataset <dataset> --retrain --less
+python main.py --model <model> --dataset <dataset> --retrain --less
 ```
 You can use the parameters in `src/params.json` to set values in `src/constants.py` for each file.
 
@@ -39,7 +39,7 @@ For ablation studies, use the following models: 'DTAAD_Tcn_Local', 'DTAAD_Tcn_Gl
 
 The output will provide anomaly detection and diagnosis scores and training time. For example:
 ```bash
-$ python3 main.py --model DTAAD --dataset SMAP --retrain 
+$ python main.py --model DTAAD --dataset SMAP --retrain 
 Using backend: pytorch
 Creating new model: DTAAD
 Training DTAAD on SMAP

@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 processed/
 plots/
+results/
 checkpoints/
 data/MSDS/metrics
 data/MSDS/train.csv
