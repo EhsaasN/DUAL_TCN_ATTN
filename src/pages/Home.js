@@ -588,7 +588,7 @@ const Home = ({ user }) => {
                 <motion.a
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  href="https://github.com"
+                  href="https://github.com/EhsaasN/DUAL_TCN_ATTN"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-3 px-4 bg-slate-700 dark:bg-slate-600 hover:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl font-medium transition-all duration-300 inline-block text-center"

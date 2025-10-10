@@ -246,7 +246,7 @@ explanations = detector.explain_anomalies()`}
               <motion.a
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                href="https://github.com"
+                href="https://github.com/EhsaasN/DUAL_TCN_ATTN"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-6 py-3 glass border border-dtaad-cyan/30 text-dtaad-cyan rounded-lg font-semibold hover:glow-cyan transition-all duration-300 flex items-center space-x-2 mx-auto"

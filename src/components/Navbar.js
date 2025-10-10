@@ -134,7 +134,7 @@ const Navbar = ({ isLoggedIn, user, onLogout }) => {
             <motion.a
               whileHover={{ scale: 1.1, rotate: 5 }}
               whileTap={{ scale: 0.9 }}
-              href="https://github.com"
+              href="https://github.com/EhsaasN/DUAL_TCN_ATTN"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
