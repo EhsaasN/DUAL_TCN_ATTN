@@ -126,7 +126,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
     feats = dataO.shape[1]
     # device = torch.device('cpu')  # Force CPU usage
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
+    tqdm.write(f"Using device: {device}")
     
     if 'DAGMM' in model.name:
         l = nn.MSELoss(reduction='none')
@@ -480,7 +480,7 @@ if __name__ == '__main__':
     ### Training phase
     if not args.test:
         print(f'{color.HEADER}Training {args.model} on {args.dataset}{color.ENDC}')
-        num_epochs = 5
+        num_epochs = 20
         e = epoch + 1
         start = time()
         for e in tqdm(list(range(epoch + 1, epoch + num_epochs + 1))):
