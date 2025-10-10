@@ -12,8 +12,8 @@ class Chomp1d(nn.Module):
 
 class TemporalCnn(nn.Module):
     def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, dropout=0.2):
-        print(f"DEBUG: TemporalCnn - n_inputs={n_inputs}, n_outputs={n_outputs}, kernel_size={kernel_size}")  # Add this
-        print(f"Conv1d created: in_channels={n_inputs}, out_channels={n_outputs}, kernel_size={kernel_size}")
+        # print(f"DEBUG: TemporalCnn - n_inputs={n_inputs}, n_outputs={n_outputs}, kernel_size={kernel_size}")  # Add this
+        # print(f"Conv1d created: in_channels={n_inputs}, out_channels={n_outputs}, kernel_size={kernel_size}")
         super(TemporalCnn, self).__init__()
         self.conv = weight_norm(nn.Conv1d(n_inputs, n_outputs, kernel_size,
                                           stride=stride, padding=padding, dilation=dilation))

@@ -20,14 +20,41 @@ if 'src.models' in sys.modules:
 def convert_to_windows(data, model):
     windows = []
     w_size = model.n_window
-    num_features = data.shape[1]  # get number of features
+    
+    # Convert to tensor first
     data = torch.tensor(data, dtype=torch.float64)
-    for i in range(len(data) - w_size + 1):
-        w = data[i:i + w_size]  # [window_size, num_features]
-        windows.append(w)
-    windows = torch.stack(windows)  # [num_windows, window_size, num_features]
-    # --- FIX: permute to [batch, features, window_size] ---
-    windows = windows.permute(0, 2, 1)  # [num_windows, num_features, window_size]
+    
+    # Handle 3D data [samples, features, sequence]
+    if len(data.shape) == 3:
+        samples, features, sequence_length = data.shape
+        print(f"🔍 Processing 3D data: samples={samples}, features={features}, sequence_length={sequence_length}")
+        
+        # Use larger step size to reduce number of windows
+        step_size = w_size  # Non-overlapping windows
+        # Or use step_size = w_size // 2 for 50% overlap
+        
+        # Create windows with step size
+        for i in range(0, sequence_length - w_size + 1, step_size):
+            w = data[:, :, i:i + w_size]  # [samples, features, window_size]
+            windows.append(w)
+        
+        if windows:
+            windows = torch.stack(windows, dim=0)  # [num_windows, samples, features, window_size]
+            num_windows, samples, features, window_size = windows.shape
+            windows = windows.view(num_windows * samples, features, window_size)
+            print(f"🎯 Reduced windows: {num_windows} windows per sample, total: {windows.shape[0]}")
+        else:
+            windows = data
+            
+    else:  # 2D data [samples, features] - original logic
+        num_features = data.shape[1]
+        step_size = w_size  # Non-overlapping
+        for i in range(0, len(data) - w_size + 1, step_size):
+            w = data[i:i + w_size]  # [window_size, num_features]
+            windows.append(w)
+        windows = torch.stack(windows)  # [num_windows, window_size, num_features]
+        windows = windows.permute(0, 2, 1)  # [num_windows, num_features, window_size]
+    
     return windows
 
 
@@ -37,12 +64,15 @@ def load_dataset(dataset):
         raise Exception('Processed Data not found.')
     loader = []
     for file in ['train', 'test', 'labels']:
-        if dataset == 'SMD': file = 'machine-1-1_' + file
-        if dataset == 'SMAP': file = 'P-1_' + file
-        if dataset == 'MSL': file = 'C-1_' + file
-        if dataset == 'UCR': file = '136_' + file
-        if dataset == 'NAB': file = 'ec2_request_latency_system_failure_' + file
-        loader.append(np.load(os.path.join(folder, f'{file}.npy')))
+        # Your existing file loading logic...
+        data = np.load(os.path.join(folder, f'{file}.npy'))
+        
+        # If data is 2D [samples, sequence] but should be 3D [samples, features, sequence]
+        if len(data.shape) == 2 and file != 'labels':
+            print(f"📊 Reshaping {file} data from {data.shape} to add feature dimension")
+            data = data[:, np.newaxis, :]  # Add feature dimension: [samples, 1, sequence]
+            
+        loader.append(data)
     # loader = [i[:, debug:debug+1] for i in loader]
     if args.less: loader[0] = cut_array(0.2, loader[0])
     # OLD:
@@ -354,7 +384,15 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             for d, _ in dataloader:
                 d = d.to(device)
                 local_bs = d.shape[0]
-                window = d.permute(0, 2, 1)  # [batch, features, window_size]
+                # Add debug print
+                # print(f"🔍 DTAAD backprop input d shape: {d.shape}")
+                # window = d.permute(0, 2, 1)  # [batch, features, window_size]
+                if d.shape[1] == 1 and d.shape[2] == 10:  # [batch, 1, 10] - already correct format
+                    window = d  # No permutation needed
+                else:
+                    window = d.permute(0, 2, 1)  # [batch, features, window_size]
+            
+                # print(f"🔍 DTAAD window shape: {window.shape}")
                 num_features = window.shape[1]
                 elem = window[:, :, -1].view(1, local_bs, num_features)  # [1, batch, features]
                 z = model(window)
@@ -367,12 +405,20 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             scheduler.step()
             tqdm.write(f'Epoch {epoch},\tL1 = {np.mean(l1s)}')
             return np.mean(l1s), optimizer.param_groups[0]['lr']
-        else:
+        else:  # Testing phase
             model.to(device)
             for d, _ in dataloader:
-                window = d.permute(0, 2, 1)
+                d = d.to(device)
+                
+                # Same dimension fix as training
+                if len(d.shape) == 3 and d.shape[2] == 10:  # [batch, features, window_size]
+                    window = d  # Already in correct format
+                    num_features = window.shape[1]
+                else:
+                    window = d.permute(0, 2, 1)
+                    num_features = window.shape[1]
+                
                 local_bs = d.shape[0]
-                num_features = window.shape[1]
                 elem = window[:, :, -1].view(1, local_bs, num_features)  # [1, batch, features]
                 z = model(window)
                 z = z[1].permute(1, 0, 2)
@@ -451,9 +497,50 @@ if __name__ == '__main__':
     loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False)
 
     ### Plot curves
+    # if not args.test:
+    #     if 'TranAD' or 'DTAAD' in model.name: testO = torch.roll(testO, 1, 0)
+    #     plotter(f'{args.model}_{args.dataset}', testO, y_pred, loss, labels)
+    ### Plot curves
     if not args.test:
-        if 'TranAD' or 'DTAAD' in model.name: testO = torch.roll(testO, 1, 0)
-        plotter(f'{args.model}_{args.dataset}', testO, y_pred, loss, labels)
+        # print("📊 Preparing data for plotting...")
+        
+        # Convert tensors to numpy and handle shape mismatch
+        if isinstance(testO, torch.Tensor):
+            testO_np = testO.detach().cpu().numpy()
+        else:
+            testO_np = testO
+        
+        # Take first sample and first channel for plotting: (48, 1, 17479) -> (17479,)
+        if len(testO_np.shape) == 3:
+            testO_plot = testO_np[0, 0, :]  # First sample, first channel
+        else:
+            testO_plot = testO_np[0] if len(testO_np.shape) > 1 else testO_np
+        
+        # For y_pred, take first portion that matches original length
+        y_pred_plot = y_pred[:len(testO_plot)] if len(y_pred) > len(testO_plot) else y_pred
+        ascore_plot = loss[:len(testO_plot)] if len(loss) > len(testO_plot) else loss
+        
+        # Create dummy labels for plotting (same length as testO_plot) - FIXED VERSION
+        labels_plot = np.zeros((len(testO_plot), 1))
+        if len(labels.shape) > 1 and labels.shape[0] > 0:
+            # Use simpler approach - tile the labels to match length
+            repeat_factor = len(testO_plot) // len(labels) + 1
+            repeated_labels = np.tile(labels[:, 0], repeat_factor)
+            labels_plot[:, 0] = repeated_labels[:len(testO_plot)]  # Trim to exact length
+        
+        # Ensure all have same length
+        min_len = min(len(testO_plot), len(y_pred_plot), len(ascore_plot))
+        testO_plot = testO_plot[:min_len].reshape(-1, 1)
+        y_pred_plot = y_pred_plot[:min_len].reshape(-1, 1)
+        ascore_plot = ascore_plot[:min_len].reshape(-1, 1)
+        labels_plot = labels_plot[:min_len].reshape(-1, 1)
+        
+        # print(f"🎯 Aligned shapes: testO: {testO_plot.shape}, y_pred: {y_pred_plot.shape}, ascore: {ascore_plot.shape}, labels: {labels_plot.shape}")
+        
+        if 'TranAD' in model.name or 'DTAAD' in model.name: 
+            testO_plot = np.roll(testO_plot, 1, 0)
+        
+        plotter(f'{args.model}_{args.dataset}', testO_plot, y_pred_plot, ascore_plot, labels_plot)
 
     ### Plot attention
     if not args.test:
@@ -462,19 +549,59 @@ if __name__ == '__main__':
 
     ### Scores
     df = pd.DataFrame()
+    preds = []
     lossT, _ = backprop(0, model, trainD, trainO, optimizer, scheduler, training=False)
+    # print(f"🔍 Debug shapes before scoring:")
+    # print(f"  lossT shape: {lossT.shape}")
+    # print(f"  loss shape: {loss.shape}")
+    # print(f"  labels shape: {labels.shape}")
+
+    # # FIX: Create windowed labels to match windowed predictions
+    # print("🔧 Creating windowed labels to match predictions...")
+
+    # Convert original labels to windowed format
+    if len(labels.shape) == 2 and labels.shape[0] < loss.shape[0]:
+        # Expand labels to match windowed data
+        # Each original sample becomes multiple windows
+        original_samples = labels.shape[0]
+        windows_per_sample = loss.shape[0] // original_samples
+        
+        # Repeat each label for all its windows
+        windowed_labels = np.repeat(labels, windows_per_sample, axis=0)
+        
+        # Trim to exact length if needed
+        windowed_labels = windowed_labels[:loss.shape[0]]
+        
+        # print(f"🎯 Windowed labels shape: {windowed_labels.shape}")
+    else:
+        windowed_labels = labels
+
     for i in range(loss.shape[1]):
-        lt, l, ls = lossT[:, i], loss[:, i], labels[:, i]
+        lt, l, ls = lossT[:, i], loss[:, i], windowed_labels[:, i]
+        # print(f"🔍 Dimension {i}:")
+        # print(f"  lt (train loss) length: {len(lt)}")
+        # print(f"  l (test loss) length: {len(l)}")
+        # print(f"  ls (labels) length: {len(ls)}")
         result, pred = pot_eval(lt, l, ls)
         preds.append(pred)
         df = pd.concat([df, pd.DataFrame([result])], ignore_index=True)
     # preds = np.concatenate([i.reshape(-1, 1) + 0 for i in preds], axis=1)
     # pd.DataFrame(preds, columns=[str(i) for i in range(10)]).to_csv('labels.csv')
     lossTfinal, lossFinal = np.mean(lossT, axis=1), np.mean(loss, axis=1)
-    labelsFinal = (np.sum(labels, axis=1) >= 1) + 0
+    # labelsFinal = (np.sum(labels, axis=1) >= 1) + 0
+    # Create final labels by averaging windowed labels back to original samples
+    if len(windowed_labels.shape) > 1:
+        labelsFinal = np.mean(windowed_labels, axis=1)
+        labelsFinal = (labelsFinal >= 0.5).astype(int)  # Threshold back to binary
+    else:
+        labelsFinal = (np.sum(labels, axis=1) >= 1) + 0
+    # print(f"🎯 Final scoring shapes:")
+    # print(f"  lossTfinal: {lossTfinal.shape}")
+    # print(f"  lossFinal: {lossFinal.shape}")  
+    # print(f"  labelsFinal: {labelsFinal.shape}")
     result, _ = pot_eval(lossTfinal, lossFinal, labelsFinal)
-    result.update(hit_att(loss, labels))
-    result.update(ndcg(loss, labels))
+    result.update(hit_att(loss, windowed_labels))
+    result.update(ndcg(loss, windowed_labels))
     print(df)
     pprint(result)
     # pprint(getresults2(df, result))
