@@ -76,7 +76,9 @@ def load_model(modelname, dims):
     fname = f'checkpoints/{args.model}_{args.dataset}/model.ckpt'
     if os.path.exists(fname) and (not args.retrain or args.test):
         print(f"{color.GREEN}Loading pre-trained model: {model.name}{color.ENDC}")
-        checkpoint = torch.load(fname, map_location='cpu')  # Force CPU loading
+        # checkpoint = torch.load(fname, map_location='cpu')  # Force CPU loading
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        checkpoint = torch.load(fname, map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
@@ -92,7 +94,9 @@ def load_model(modelname, dims):
 def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
     l = nn.MSELoss(reduction='mean' if training else 'none')
     feats = dataO.shape[1]
-    device = torch.device('cpu')  # Force CPU usage
+    # device = torch.device('cpu')  # Force CPU usage
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
     
     if 'DAGMM' in model.name:
         l = nn.MSELoss(reduction='none')
