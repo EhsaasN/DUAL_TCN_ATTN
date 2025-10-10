@@ -12,18 +12,23 @@ from torch.utils.data import Dataset, DataLoader, TensorDataset
 import torch.nn as nn
 from time import time
 from pprint import pprint
-
+import importlib
+import sys
+if 'src.models' in sys.modules:
+    importlib.reload(sys.modules['src.models'])
 
 def convert_to_windows(data, model):
     windows = []
     w_size = model.n_window
-    for i, g in enumerate(data):
-        if i >= w_size:
-            w = data[i - w_size:i]  # cut
-        else:
-            w = torch.cat([data[0].repeat(w_size - i, 1), data[0:i]])  # pad
-        windows.append(w if 'DTAAD' in args.model or 'Attention' in args.model or 'TranAD' in args.model else w.view(-1))
-    return torch.stack(windows)
+    num_features = data.shape[1]  # get number of features
+    data = torch.tensor(data, dtype=torch.float64)
+    for i in range(len(data) - w_size + 1):
+        w = data[i:i + w_size]  # [window_size, num_features]
+        windows.append(w)
+    windows = torch.stack(windows)  # [num_windows, window_size, num_features]
+    # --- FIX: permute to [batch, features, window_size] ---
+    windows = windows.permute(0, 2, 1)  # [num_windows, num_features, window_size]
+    return windows
 
 
 def load_dataset(dataset):
@@ -40,8 +45,12 @@ def load_dataset(dataset):
         loader.append(np.load(os.path.join(folder, f'{file}.npy')))
     # loader = [i[:, debug:debug+1] for i in loader]
     if args.less: loader[0] = cut_array(0.2, loader[0])
-    train_loader = DataLoader(loader[0], batch_size=loader[0].shape[0])
-    test_loader = DataLoader(loader[1], batch_size=loader[1].shape[0])
+    # OLD:
+    # train_loader = DataLoader(loader[0], batch_size=loader[0].shape[0])
+    # test_loader = DataLoader(loader[1], batch_size=loader[1].shape[0])
+    # NEW: Use reasonable batch size and shuffle for train
+    train_loader = DataLoader(loader[0], batch_size=64, shuffle=True)
+    test_loader = DataLoader(loader[1], batch_size=64, shuffle=False)
     labels = loader[2]
     return train_loader, test_loader, labels
 
@@ -329,6 +338,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
         l = nn.MSELoss(reduction='none')
         _lambda = 0.8
         model.to(device)
+        # data assumed shape: [num_windows, window_size, num_features]
         data_x = torch.DoubleTensor(data)
         dataset = TensorDataset(data_x, data_x)
         bs = model.batch if training else len(data)
@@ -340,10 +350,11 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             for d, _ in dataloader:
                 d = d.to(device)
                 local_bs = d.shape[0]
-                window = d.permute(0, 2, 1)
-                elem = window[:, :, -1].view(1, local_bs, feats)
+                window = d.permute(0, 2, 1)  # [batch, features, window_size]
+                num_features = window.shape[1]
+                elem = window[:, :, -1].view(1, local_bs, num_features)  # [1, batch, features]
                 z = model(window)
-                l1 = _lambda * l(z[0].permute(1, 0, 2), elem) + (1 - _lambda) * l(z[1].permute(1, 0, 2),elem)
+                l1 = _lambda * l(z[0].permute(1, 0, 2), elem) + (1 - _lambda) * l(z[1].permute(1, 0, 2), elem)
                 l1s.append(torch.mean(l1).item())
                 loss = torch.mean(l1)
                 optimizer.zero_grad()
@@ -356,7 +367,9 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             model.to(device)
             for d, _ in dataloader:
                 window = d.permute(0, 2, 1)
-                elem = window[:, :, -1].view(1, bs, feats)
+                local_bs = d.shape[0]
+                num_features = window.shape[1]
+                elem = window[:, :, -1].view(1, local_bs, num_features)  # [1, batch, features]
                 z = model(window)
                 z = z[1].permute(1, 0, 2)
             loss = l(z, elem)[0]
@@ -379,15 +392,40 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
 
 
 if __name__ == '__main__':
-    train_loader, test_loader, labels = load_dataset(args.dataset)
-    model, optimizer, scheduler, epoch, accuracy_list = load_model(args.model, labels.shape[1])
+    # train_loader, test_loader, labels = load_dataset(args.dataset)
+    # # model, optimizer, scheduler, epoch, accuracy_list = load_model(args.model, labels.shape[1])
+    # train_loader, test_loader, labels = load_dataset(args.dataset)
+    # trainD, testD = next(iter(train_loader)), next(iter(test_loader))
+    # model, optimizer, scheduler, epoch, accuracy_list = load_model(args.model, trainD.shape[1])  # Use data features, not label features
 
-    ## Prepare data
+    # ## Prepare data
+    # trainD, testD = next(iter(train_loader)), next(iter(test_loader))
+    # trainO, testO = trainD, testD
+    # # OLD:
+    # # if model.name in ['Attention', 'DAGMM', 'USAD', 'MSCRED', 'CAE_M', 'GDN', 'MTAD_GAT',
+    # #                   'MAD_GAN', 'TranAD'] or 'DTAAD' in model.name:
+    # #     trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
+    # # NEW: Use updated convert_to_windows, outputs [num_windows, window_size, num_features]
+    # if model.name in ['Attention', 'DAGMM', 'USAD', 'MSCRED', 'CAE_M', 'GDN', 'MTAD_GAT',
+    #                   'MAD_GAN', 'TranAD'] or 'DTAAD' in model.name:
+    #     trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
+    train_loader, test_loader, labels = load_dataset(args.dataset)
+    
+    # Get sample data to determine feature count
     trainD, testD = next(iter(train_loader)), next(iter(test_loader))
+    num_features = trainD.shape[1]
+    print(f"DEBUG: Number of features detected: {num_features}")
+    
+    # Use actual data features, not label features
+    model, optimizer, scheduler, epoch, accuracy_list = load_model(args.model, num_features)
+
+    ## Prepare data (no need to call next(iter()) again - already have trainD, testD)
     trainO, testO = trainD, testD
+    
+    # Convert to windows for models that need it
     if model.name in ['Attention', 'DAGMM', 'USAD', 'MSCRED', 'CAE_M', 'GDN', 'MTAD_GAT',
-                      'MAD_GAN', 'TranAD'] or 'DTAAD' in model.name:
-        trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
+                        'MAD_GAN', 'TranAD'] or 'DTAAD' in model.name:
+            trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
 
     ### Training phase
     if not args.test:

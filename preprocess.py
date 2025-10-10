@@ -6,6 +6,7 @@ import pickle
 import json
 from src.folderconstants import *
 from shutil import copyfile
+import glob
 
 datasets = ['synthetic', 'SMD', 'SWaT', 'SMAP', 'MSL', 'WADI', 'MSDS', 'UCR', 'MBA', 'NAB']
 
@@ -90,6 +91,70 @@ def load_data(dataset):
                 load_and_save('train', filename, filename.strip('.txt'), dataset_folder)
                 s = load_and_save('test', filename, filename.strip('.txt'), dataset_folder)
                 load_and_save2('labels', filename, filename.strip('.txt'), dataset_folder, s)
+    elif dataset == 'ecg_data':
+        dataset_folder = os.path.join(data_folder, 'ecg_data')
+        af_files = glob.glob(os.path.join(dataset_folder, 'af', '*.csv'))
+        normal_files = glob.glob(os.path.join(dataset_folder, 'normal', '*.csv'))
+
+        print("AF files found:", len(af_files), af_files[:3])
+        print("Normal files found:", len(normal_files), normal_files[:3])
+
+        X = []
+        y = []
+
+        def load_csv_matrix(file):
+            try:
+                # Specify delimiter as space, handle variable columns
+                df = pd.read_csv(file, header=None, delimiter=' ', engine='python', on_bad_lines='skip')
+            except Exception as e:
+                print(f"Failed to load {file}: {e}")
+                return None
+            df = df.apply(pd.to_numeric, errors='coerce')
+            df = df.dropna(axis=1, how='all')  # drop columns that are all NaN
+            df = df.dropna(axis=0, how='any')  # drop rows with any NaN
+            arr = df.values
+            if arr.size == 0 or len(arr.shape) != 2 or arr.shape[1] < 1:
+                print(f"Skipping file (empty or malformed): {file}")
+                return None
+            return arr
+
+        for f in af_files:
+            arr = load_csv_matrix(f)
+            if arr is not None:
+                X.append(arr)
+                y.append(np.ones((arr.shape[0], 1)))
+
+        for f in normal_files:
+            arr = load_csv_matrix(f)
+            if arr is not None:
+                X.append(arr)
+                y.append(np.zeros((arr.shape[0], 1)))
+
+        if not X:
+            raise ValueError("No valid CSV files with numeric data found in af/ or normal/ folders.")
+
+        min_cols = min([arr.shape[1] for arr in X])
+        X = [arr[:, :min_cols] for arr in X]
+
+        X = np.vstack(X)
+        y = np.vstack(y)
+
+        X = X.astype(float)
+        X = (X - X.min(axis=0)) / (np.ptp(X,axis=0) + 1e-4)
+
+        idx = np.arange(X.shape[0])
+        np.random.shuffle(idx)
+        X, y = X[idx], y[idx]
+
+        split = int(0.8 * X.shape[0])
+        train, test = X[:split], X[split:]
+        labels = y[split:]
+
+        folder = os.path.join(output_folder, 'ecg_data')
+        os.makedirs(folder, exist_ok=True)
+        np.save(os.path.join(folder, 'train.npy'), train)
+        np.save(os.path.join(folder, 'test.npy'), test)
+        np.save(os.path.join(folder, 'labels.npy'), labels)
     elif dataset == 'UCR':
         dataset_folder = 'data/UCR'
         file_list = os.listdir(dataset_folder)
