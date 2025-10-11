@@ -126,7 +126,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
     feats = dataO.shape[1]
     # device = torch.device('cpu')  # Force CPU usage
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    tqdm.write(f"Using device: {device}")
+    # tqdm.write(f"Using device: {device}")
     
     if 'DAGMM' in model.name:
         l = nn.MSELoss(reduction='none')
@@ -423,7 +423,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
                 z = model(window)
                 z = z[1].permute(1, 0, 2)
             loss = l(z, elem)[0]
-            return loss.detach().numpy(), z.detach().numpy()[0]
+            return loss.detach().numpy(), z.detach().cpu().numpy()[0]
     else:
         model.to(device)
         data = data.to(device)
@@ -459,6 +459,8 @@ if __name__ == '__main__':
     # if model.name in ['Attention', 'DAGMM', 'USAD', 'MSCRED', 'CAE_M', 'GDN', 'MTAD_GAT',
     #                   'MAD_GAN', 'TranAD'] or 'DTAAD' in model.name:
     #     trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"🔧 Device detected: {device}")
     train_loader, test_loader, labels = load_dataset(args.dataset)
     
     # Get sample data to determine feature count
