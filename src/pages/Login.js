@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Github, Chrome } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Github, Chrome } from 'lucide-react';
 
 const Login = ({ onLogin, isLoggedIn }) => {
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
@@ -23,6 +26,10 @@ const Login = ({ onLogin, isLoggedIn }) => {
   const validateForm = () => {
     const newErrors = {};
     
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -33,6 +40,12 @@ const Login = ({ onLogin, isLoggedIn }) => {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
     }
     
     setErrors(newErrors);
@@ -83,8 +96,8 @@ const Login = ({ onLogin, isLoggedIn }) => {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6,
-        staggerChildren: 0.1
+        duration: 0.3,
+        staggerChildren: 0.05
       }
     }
   };
@@ -96,8 +109,8 @@ const Login = ({ onLogin, isLoggedIn }) => {
       y: 0,
       transition: {
         type: 'spring',
-        stiffness: 100,
-        damping: 12
+        stiffness: 150,
+        damping: 15
       }
     }
   };
@@ -120,7 +133,7 @@ const Login = ({ onLogin, isLoggedIn }) => {
                 "0 0 20px rgba(0,255,255,0.3)"
               ]
             }}
-            transition={{ duration: 2, repeat: Infinity }}
+            transition={{ duration: 1, repeat: Infinity }}
             className="w-16 h-16 bg-gradient-to-br from-dtaad-cyan to-dtaad-purple rounded-2xl flex items-center justify-center mx-auto mb-6"
           >
             <Lock className="w-8 h-8 text-white" />
@@ -140,6 +153,32 @@ const Login = ({ onLogin, isLoggedIn }) => {
           className="glass p-8 rounded-2xl border border-white/10"
         >
           <div className="space-y-6">
+            {/* Name Field */}
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className={`w-full pl-10 pr-3 py-3 glass border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
+                    errors.name ? 'border-red-400' : 'border-white/10'
+                  }`}
+                  placeholder="Enter your full name"
+                />
+              </div>
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-400">{errors.name}</p>
+              )}
+            </div>
+
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
@@ -199,6 +238,39 @@ const Login = ({ onLogin, isLoggedIn }) => {
               )}
             </div>
 
+            {/* Confirm Password Field */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className={`w-full pl-10 pr-12 py-3 glass border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
+                    errors.confirmPassword ? 'border-red-400' : 'border-white/10'
+                  }`}
+                  placeholder="Confirm your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-dtaad-cyan transition-colors duration-300"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
+              )}
+            </div>
+
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -212,9 +284,13 @@ const Login = ({ onLogin, isLoggedIn }) => {
                   Remember me
                 </label>
               </div>
-              <a href="#" className="text-sm text-dtaad-cyan hover:text-dtaad-cyan/80 transition-colors duration-300">
+              <button
+                type="button"
+                className="text-sm text-dtaad-cyan hover:text-dtaad-cyan/80 transition-colors duration-300"
+                onClick={() => alert('Forgot Password - Coming Soon')}
+              >
                 Forgot password?
-              </a>
+              </button>
             </div>
 
             {/* Submit Button */}
@@ -234,49 +310,8 @@ const Login = ({ onLogin, isLoggedIn }) => {
                 <span>Sign In</span>
               )}
             </motion.button>
-
-            {/* Demo Credentials */}
-            <div className="mt-4 p-3 bg-dtaad-dark/50 rounded-lg border border-dtaad-cyan/20">
-              <p className="text-xs text-gray-400 mb-2">Demo Credentials:</p>
-              <p className="text-xs text-gray-300">Email: demo@dtaad.com</p>
-              <p className="text-xs text-gray-300">Password: demo123</p>
-            </div>
           </div>
         </motion.form>
-
-        {/* Social Login */}
-        <motion.div variants={itemVariants} className="space-y-4">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-600" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-dtaad-dark text-gray-400">Or continue with</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-lg shadow-sm bg-white/5 text-sm font-medium text-gray-300 hover:bg-white/10 transition-all duration-300"
-            >
-              <Github className="w-5 h-5" />
-              <span className="ml-2">GitHub</span>
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-lg shadow-sm bg-white/5 text-sm font-medium text-gray-300 hover:bg-white/10 transition-all duration-300"
-            >
-              <Chrome className="w-5 h-5" />
-              <span className="ml-2">Google</span>
-            </motion.button>
-          </div>
-        </motion.div>
 
         {/* Sign Up Link */}
         <motion.div variants={itemVariants} className="text-center">

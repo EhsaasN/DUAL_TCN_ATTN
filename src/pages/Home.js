@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import ThemeToggle from '../components/ThemeToggle';
 
-const Home = ({ user }) => {
+const Home = ({ user, onLogout }) => {
   const [activeSection, setActiveSection] = useState('home');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -161,8 +161,8 @@ const Home = ({ user }) => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
+        staggerChildren: 0.05,
+        delayChildren: 0.1,
       }
     }
   };
@@ -174,8 +174,8 @@ const Home = ({ user }) => {
       x: 0,
       transition: {
         type: 'spring',
-        stiffness: 100,
-        damping: 12
+        stiffness: 150,
+        damping: 15
       }
     }
   };
@@ -683,6 +683,7 @@ const Home = ({ user }) => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              onClick={onLogout}
               className="w-full py-3 px-4 bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/30 text-red-700 dark:text-red-400 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2"
             >
               <LogOut className="w-5 h-5" />

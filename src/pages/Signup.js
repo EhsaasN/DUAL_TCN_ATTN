@@ -96,8 +96,8 @@ const Signup = ({ onLogin, isLoggedIn }) => {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6,
-        staggerChildren: 0.1
+        duration: 0.3,
+        staggerChildren: 0.05
       }
     }
   };
@@ -109,8 +109,8 @@ const Signup = ({ onLogin, isLoggedIn }) => {
       y: 0,
       transition: {
         type: 'spring',
-        stiffness: 100,
-        damping: 12
+        stiffness: 150,
+        damping: 15
       }
     }
   };
@@ -133,7 +133,7 @@ const Signup = ({ onLogin, isLoggedIn }) => {
                 "0 0 20px rgba(155,93,229,0.3)"
               ]
             }}
-            transition={{ duration: 2, repeat: Infinity }}
+            transition={{ duration: 1, repeat: Infinity }}
             className="w-16 h-16 bg-gradient-to-br from-dtaad-purple to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6"
           >
             <User className="w-8 h-8 text-white" />
@@ -282,13 +282,21 @@ const Signup = ({ onLogin, isLoggedIn }) => {
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-400">
                 I agree to the{' '}
-                <a href="#" className="text-dtaad-purple hover:text-dtaad-purple/80 transition-colors duration-300">
+                <button
+                  type="button"
+                  className="text-dtaad-purple hover:text-dtaad-purple/80 transition-colors duration-300 underline"
+                  onClick={() => alert('Terms of Service - Coming Soon')}
+                >
                   Terms of Service
-                </a>{' '}
+                </button>{' '}
                 and{' '}
-                <a href="#" className="text-dtaad-purple hover:text-dtaad-purple/80 transition-colors duration-300">
+                <button
+                  type="button"
+                  className="text-dtaad-purple hover:text-dtaad-purple/80 transition-colors duration-300 underline"
+                  onClick={() => alert('Privacy Policy - Coming Soon')}
+                >
                   Privacy Policy
-                </a>
+                </button>
               </label>
             </div>
 
@@ -312,40 +320,6 @@ const Signup = ({ onLogin, isLoggedIn }) => {
           </div>
         </motion.form>
 
-        {/* Social Signup */}
-        <motion.div variants={itemVariants} className="space-y-4">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-600" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-dtaad-dark text-gray-400">Or sign up with</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-lg shadow-sm bg-white/5 text-sm font-medium text-gray-300 hover:bg-white/10 transition-all duration-300"
-            >
-              <Github className="w-5 h-5" />
-              <span className="ml-2">GitHub</span>
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-lg shadow-sm bg-white/5 text-sm font-medium text-gray-300 hover:bg-white/10 transition-all duration-300"
-            >
-              <Chrome className="w-5 h-5" />
-              <span className="ml-2">Google</span>
-            </motion.button>
-          </div>
-        </motion.div>
-
         {/* Sign In Link */}
         <motion.div variants={itemVariants} className="text-center">
           <p className="text-gray-400">
@@ -357,6 +331,21 @@ const Signup = ({ onLogin, isLoggedIn }) => {
               Sign in here
             </Link>
           </p>
+        </motion.div>
+
+        {/* Sign In Button - Enhanced Visibility */}
+        <motion.div
+          variants={itemVariants}
+          className="text-center"
+        >
+          <div className="inline-block p-6 bg-white/10 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-dtaad-cyan/30 shadow-lg">
+            <Link
+              to="/login"
+              className="inline-block px-8 py-4 bg-gradient-to-r from-dtaad-cyan to-dtaad-purple hover:from-dtaad-cyan/90 hover:to-dtaad-purple/90 text-white rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              Sign In Instead
+            </Link>
+          </div>
         </motion.div>
 
         {/* Guest Access */}

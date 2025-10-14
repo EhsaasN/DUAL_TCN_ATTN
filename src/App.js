@@ -60,7 +60,7 @@ function App() {
                 path="/home" 
                 element={
                   isLoggedIn ? (
-                    <Home user={user} />
+                    <Home user={user} onLogout={handleLogout} />
                   ) : (
                     <motion.div
                       initial={{ opacity: 0 }}

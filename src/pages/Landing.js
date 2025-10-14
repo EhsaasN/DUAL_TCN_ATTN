@@ -15,8 +15,8 @@ const Landing = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3,
+        staggerChildren: 0.1,
+        delayChildren: 0.15,
       }
     }
   };
@@ -28,8 +28,8 @@ const Landing = () => {
       opacity: 1,
       transition: {
         type: 'spring',
-        stiffness: 100,
-        damping: 12
+        stiffness: 150,
+        damping: 15
       }
     }
   };
@@ -50,7 +50,7 @@ const Landing = () => {
                 "radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.1) 0%, transparent 50%)"
               ]
             }}
-            transition={{ duration: 15, repeat: Infinity }}
+            transition={{ duration: 8, repeat: Infinity }}
             className="absolute inset-0"
           />
         </div>
@@ -99,7 +99,7 @@ const Landing = () => {
                       "0 0 10px rgba(14, 165, 233, 0.3)"
                     ]
                   }}
-                  transition={{ duration: 4, repeat: Infinity }}
+                  transition={{ duration: 2, repeat: Infinity }}
                 >
                   DTAAD
                 </motion.h1>

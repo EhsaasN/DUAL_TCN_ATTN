@@ -230,42 +230,6 @@ explanations = detector.explain_anomalies()`}
             </div>
           </div>
         </motion.div>
-
-        {/* Quick Links */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center"
-        >
-          <div className="glass p-8 rounded-2xl border border-white/10">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              Need Help?
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.a
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                href="https://github.com/EhsaasN/DUAL_TCN_ATTN"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 glass border border-dtaad-cyan/30 text-dtaad-cyan rounded-lg font-semibold hover:glow-cyan transition-all duration-300 flex items-center space-x-2 mx-auto"
-              >
-                <Github className="w-5 h-5" />
-                <span>View on GitHub</span>
-              </motion.a>
-              
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => window.open('mailto:support@dtaad.com')}
-                className="px-6 py-3 bg-gradient-to-r from-dtaad-purple to-pink-500 text-white rounded-lg font-semibold hover:glow-purple transition-all duration-300"
-              >
-                Contact Support
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </div>
   );

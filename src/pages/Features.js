@@ -81,11 +81,11 @@ const Features = () => {
               key={index}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.15 }}
+              transition={{ duration: 0.3, delay: index * 0.08 }}
               whileHover={{ 
                 y: -10, 
                 scale: 1.03,
-                transition: { duration: 0.3 }
+                transition: { duration: 0.15 }
               }}
               className="group glass p-8 rounded-2xl border border-slate-200 dark:border-slate-700 hover:shadow-2xl transition-all duration-300"
             >
@@ -94,14 +94,14 @@ const Features = () => {
                 whileHover={{ 
                   scale: 1.1, 
                   rotate: 5,
-                  transition: { duration: 0.2 }
+                  transition: { duration: 0.1 }
                 }}
               >
                 <feature.icon className="w-7 h-7 text-white" />
               </motion.div>
               <motion.h3 
                 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors duration-300"
-                whileHover={{ x: 5 }}
+                whileHover={{ x: 5, transition: { duration: 0.15 } }}
               >
                 {feature.title}
               </motion.h3>
@@ -182,7 +182,7 @@ const Features = () => {
               scale: [1, 1.05, 1],
               opacity: [0.9, 1, 0.9]
             }}
-            transition={{ duration: 3, repeat: Infinity }}
+            transition={{ duration: 1.5, repeat: Infinity }}
             className="mb-6"
           >
             <Eye className="w-16 h-16 mx-auto mb-4 opacity-80" />

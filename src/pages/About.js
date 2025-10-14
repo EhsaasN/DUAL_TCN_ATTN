@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Github, Users } from 'lucide-react';
+import { Github, Users, Linkedin } from 'lucide-react';
 
 const AboutUs = () => {
   const containerVariants = {
@@ -8,8 +8,8 @@ const AboutUs = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3,
+        staggerChildren: 0.1,
+        delayChildren: 0.15,
       }
     }
   };
@@ -21,8 +21,8 @@ const AboutUs = () => {
       opacity: 1,
       transition: {
         type: 'spring',
-        stiffness: 100,
-        damping: 12
+        stiffness: 150,
+        damping: 15
       }
     }
   };
@@ -32,37 +32,49 @@ const AboutUs = () => {
       name: "Student",
       rollNumber: "CSE001",
       github: "EhsaasN",
-      githubUrl: "https://github.com/EhsaasN"
+      githubUrl: "https://github.com/EhsaasN",
+      linkedin: "ehsaas-nayak",
+      linkedinUrl: "https://linkedin.com/in/ehsaas-nayak"
     },
     {
       name: "Student",
       rollNumber: "CSE002", 
       github: "student2",
-      githubUrl: "https://github.com/student2"
+      githubUrl: "https://github.com/student2",
+      linkedin: "student2-linkedin",
+      linkedinUrl: "https://linkedin.com/in/student2-linkedin"
     },
     {
       name: "Student",
       rollNumber: "CSE003",
       github: "student3",
-      githubUrl: "https://github.com/student3"
+      githubUrl: "https://github.com/student3",
+      linkedin: "student3-linkedin",
+      linkedinUrl: "https://linkedin.com/in/student3-linkedin"
     },
     {
       name: "Student",
       rollNumber: "CSE004",
       github: "student4",
-      githubUrl: "https://github.com/student4"
+      githubUrl: "https://github.com/student4",
+      linkedin: "student4-linkedin",
+      linkedinUrl: "https://linkedin.com/in/student4-linkedin"
     },
     {
       name: "Student",
       rollNumber: "CSE005",
       github: "student5",
-      githubUrl: "https://github.com/student5"
+      githubUrl: "https://github.com/student5",
+      linkedin: "student5-linkedin",
+      linkedinUrl: "https://linkedin.com/in/student5-linkedin"
     },
     {
       name: "Student",
       rollNumber: "CSE006",
       github: "student6",
-      githubUrl: "https://github.com/student6"
+      githubUrl: "https://github.com/student6",
+      linkedin: "student6-linkedin",
+      linkedinUrl: "https://linkedin.com/in/student6-linkedin"
     }
   ];
 
@@ -108,7 +120,7 @@ const AboutUs = () => {
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.05 }}
                   whileHover={{ y: -5, scale: 1.02 }}
                   className="bg-slate-50 dark:bg-slate-700 rounded-xl p-6 shadow-md border border-slate-200 dark:border-slate-600 text-center group"
                 >
@@ -121,17 +133,33 @@ const AboutUs = () => {
                   <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">{member.name}</h4>
                   <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{member.rollNumber}</p>
 
-                  <motion.a
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    href={member.githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-200"
-                  >
-                    <Github className="w-5 h-5" />
-                    <span className="text-sm">GitHub</span>
-                  </motion.a>
+                  <div className="flex items-center justify-center space-x-4 mt-4">
+                    <motion.a
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      href={member.githubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`View ${member.name}'s GitHub profile`}
+                      className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-200"
+                    >
+                      <Github className="w-5 h-5" />
+                      <span className="text-sm">GitHub</span>
+                    </motion.a>
+
+                    <motion.a
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      href={member.linkedinUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`View ${member.name}'s LinkedIn profile`}
+                      className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                    >
+                      <Linkedin className="w-5 h-5" />
+                      <span className="text-sm">LinkedIn</span>
+                    </motion.a>
+                  </div>
                 </motion.div>
               ))}
             </div>
