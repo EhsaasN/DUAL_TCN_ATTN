@@ -28,7 +28,7 @@ def train_optimized_enhanced_dtaad():
     print("=" * 60)
     
     # Load data
-    train_loader, test_loader, labels = load_dataset('ecg_data')
+    train_loader, test_loader, labels = load_dataset('MBA')
     trainD, testD = next(iter(train_loader)), next(iter(test_loader))
     num_features = trainD.shape[1]
     
@@ -78,13 +78,10 @@ def train_optimized_enhanced_dtaad():
     
     training_time = time() - start_time
     print(f"\n⏱️  Optimized Training completed in {training_time:.2f} seconds")
-    print(f"🎯 Performance comparison:")
-    print(f"   Original DTAAD (20 epochs): ~294 seconds")
-    print(f"   Enhanced DTAAD (20 epochs): ~1552")
-    print(f"   Optimized Enhanced (20 epochs): {training_time:.1f} seconds")
+    # print(f"   Optimized Enhanced (20 epochs): {training_time:.1f} seconds")
     
     # Save model
-    save_path = 'checkpoints/Optimized_Enhanced_DTAAD_ecg_data/'
+    save_path = 'checkpoints/Optimized_Enhanced_DTAAD_MBA/'
     os.makedirs(save_path, exist_ok=True)
     
     torch.save({
@@ -99,7 +96,7 @@ def train_optimized_enhanced_dtaad():
     print(f"💾 Optimized Enhanced model saved to: {save_path}/model.ckpt")
     
     # Plot training curves
-    plot_accuracies(accuracy_list, 'Optimized_Enhanced_DTAAD_ecg_data')
+    plot_accuracies(accuracy_list, 'Optimized_Enhanced_DTAAD_MBA')
     
     # Test the model
     print(f"\n🧪 Testing Optimized Enhanced DTAAD...")
@@ -110,7 +107,7 @@ def train_optimized_enhanced_dtaad():
 def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer, scheduler):
     """Test the optimized model"""
     model.eval()
-    print(f"Testing Optimized_Enhanced_DTAAD on ecg_data")
+    print(f"Testing Optimized_Enhanced_DTAAD on MBA")
     
     # Get predictions
     loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False)
@@ -144,7 +141,7 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
     testO_plot = np.roll(testO_plot, 1, 0)
     
     # Plot results
-    plotter('Optimized_Enhanced_DTAAD_ecg_data', testO_plot, y_pred_plot, ascore_plot, labels_plot)
+    plotter('Optimized_Enhanced_DTAAD_MBA', testO_plot, y_pred_plot, ascore_plot, labels_plot)
     
     # Evaluation
     df = pd.DataFrame()
