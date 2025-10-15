@@ -19,6 +19,10 @@ from src.pot import *
 from src.utils import *
 from src.diagnosis import *
 from main import convert_to_windows, load_dataset, backprop, save_model
+import matplotlib
+matplotlib.use('Agg')  # Add this line
+import matplotlib.pyplot as plt
+plt.ioff() 
 
 def train_optimized_enhanced_dtaad():
     """Train the Optimized Enhanced DTAAD model - 50% faster"""
@@ -105,6 +109,9 @@ def train_optimized_enhanced_dtaad():
     return model
 
 def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer, scheduler):
+    # Force all data to CPU for plotting
+    device = torch.device('cpu')
+    model = model.to(device)
     """Test the optimized model"""
     model.eval()
     print(f"Testing Optimized_Enhanced_DTAAD on MBA")
