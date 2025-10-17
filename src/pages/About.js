@@ -39,10 +39,10 @@ const AboutUs = () => {
     {
       name: "Honesha M",
       branch: "CS",
-      github: "honesha-m",
-      githubUrl: "https://github.com/honesha-m",
-      linkedin: "honesha-m",
-      linkedinUrl: "https://linkedin.com/in/honesha-m"
+      github: "Honeymagam",
+      githubUrl: "https://github.com/Honeymagam",
+      linkedin: "honeysha-magam",
+      linkedinUrl: "https://www.linkedin.com/in/honeysha-magam-10b056372/"
     },
     {
       name: "Kanishka Gupta",
