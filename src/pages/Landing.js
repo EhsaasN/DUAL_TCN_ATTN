@@ -91,7 +91,7 @@ const Landing = () => {
             <motion.div variants={itemVariants} className="space-y-6">
               <motion.div className="relative">
                 <motion.h1 
-                  className="text-7xl md:text-9xl font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight"
+                  className="text-7xl md:text-9xl font-bold text-slate-900 dark:text-gray-100 leading-tight tracking-tight"
                   animate={{ 
                     textShadow: [
                       "0 0 10px rgba(14, 165, 233, 0.3)",
@@ -114,7 +114,7 @@ const Landing = () => {
               </motion.div>
               
               <motion.p 
-                className="text-2xl md:text-3xl text-gray-700 dark:text-gray-300 max-w-5xl mx-auto leading-relaxed font-light"
+                className="text-2xl md:text-3xl text-slate-800 dark:text-gray-300 max-w-5xl mx-auto leading-relaxed font-light"
                 variants={itemVariants}
               >
                 Dual TCN-Attention Networks for Anomaly Detection in Multivariate Time Series Data
@@ -127,7 +127,7 @@ const Landing = () => {
               className="space-y-4"
             >
               <motion.p 
-                className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-4xl mx-auto font-light leading-relaxed"
+                className="text-xl md:text-2xl text-slate-700 dark:text-gray-400 max-w-4xl mx-auto font-light leading-relaxed"
               >
                 A sophisticated deep learning architecture for intelligent time-series anomaly detection.
               </motion.p>
@@ -244,13 +244,13 @@ const Landing = () => {
             className="text-center mb-20"
           >
             <motion.h2 
-              className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6"
+              className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-gray-100 mb-6"
               whileHover={{ scale: 1.02 }}
             >
               Key Features
             </motion.h2>
             <motion.p 
-              className="text-2xl text-gray-600 dark:text-gray-400 max-w-4xl mx-auto leading-relaxed"
+              className="text-2xl text-slate-700 dark:text-gray-400 max-w-4xl mx-auto leading-relaxed"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
@@ -305,12 +305,12 @@ const Landing = () => {
                   <feature.icon className="w-7 h-7 text-white" />
                 </motion.div>
                 <motion.h3 
-                  className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300"
+                  className="text-2xl font-bold text-slate-900 dark:text-gray-100 mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300"
                   whileHover={{ x: 5 }}
                 >
                   {feature.title}
                 </motion.h3>
-                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                <p className="text-slate-700 dark:text-gray-400 leading-relaxed">
                   {feature.description}
                 </p>
               </motion.div>
@@ -330,7 +330,7 @@ const Landing = () => {
           >
             <motion.div className="space-y-6">
               <motion.h2 
-                className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-gray-100"
+                className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-gray-100"
                 whileHover={{ scale: 1.02 }}
               >
                 Technical Documentation
@@ -346,7 +346,7 @@ const Landing = () => {
             </motion.div>
             
             <motion.p 
-              className="text-2xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed"
+              className="text-2xl text-slate-700 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.3 }}

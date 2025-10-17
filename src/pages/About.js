@@ -29,52 +29,52 @@ const AboutUs = () => {
 
   const teamMembers = [
     {
-      name: "Student",
-      rollNumber: "CSE001",
+      name: "Ehsaas",
+      branch: "CSM",
       github: "EhsaasN",
       githubUrl: "https://github.com/EhsaasN",
-      linkedin: "ehsaas-nayak",
-      linkedinUrl: "https://linkedin.com/in/ehsaas-nayak"
+      linkedin: "ehsaas-nahata",
+      linkedinUrl: "https://www.linkedin.com/in/ehsaas-nahata-836544347/"
     },
     {
-      name: "Student",
-      rollNumber: "CSE002", 
-      github: "student2",
-      githubUrl: "https://github.com/student2",
-      linkedin: "student2-linkedin",
-      linkedinUrl: "https://linkedin.com/in/student2-linkedin"
+      name: "Honesha M",
+      branch: "CS",
+      github: "honesha-m",
+      githubUrl: "https://github.com/honesha-m",
+      linkedin: "honesha-m",
+      linkedinUrl: "https://linkedin.com/in/honesha-m"
     },
     {
-      name: "Student",
-      rollNumber: "CSE003",
-      github: "student3",
-      githubUrl: "https://github.com/student3",
-      linkedin: "student3-linkedin",
-      linkedinUrl: "https://linkedin.com/in/student3-linkedin"
+      name: "Kanishka Gupta",
+      branch: "CSE",
+      github: "KanishkaG-14",
+      githubUrl: "https://github.com/KanishkaG-14",
+      linkedin: "kanishkagupta1409",
+      linkedinUrl: "https://www.linkedin.com/in/kanishkagupta1409"
     },
     {
-      name: "Student",
-      rollNumber: "CSE004",
-      github: "student4",
-      githubUrl: "https://github.com/student4",
-      linkedin: "student4-linkedin",
-      linkedinUrl: "https://linkedin.com/in/student4-linkedin"
+      name: "Madhuri V",
+      branch: "CSE",
+      github: "vmadx",
+      githubUrl: "https://github.com/vmadx",
+      linkedin: "madhurivemparala",
+      linkedinUrl: "https://www.linkedin.com/in/madhurivemparala/"
     },
     {
-      name: "Student",
-      rollNumber: "CSE005",
-      github: "student5",
-      githubUrl: "https://github.com/student5",
-      linkedin: "student5-linkedin",
-      linkedinUrl: "https://linkedin.com/in/student5-linkedin"
+      name: "Neha Thapasvi K",
+      branch: "CS",
+      github: "nehaatapasvi",
+      githubUrl: "https://github.com/nehaatapasvi",
+      linkedin: "neha-thapasvi-k",
+      linkedinUrl: "https://linkedin.com/in/neha-thapasvi-k"
     },
     {
-      name: "Student",
-      rollNumber: "CSE006",
-      github: "student6",
-      githubUrl: "https://github.com/student6",
-      linkedin: "student6-linkedin",
-      linkedinUrl: "https://linkedin.com/in/student6-linkedin"
+      name: "Sathwika K",
+      branch: "CSE",
+      github: "sathwika-k",
+      githubUrl: "https://github.com/sathwika-k",
+      linkedin: "sathwika-kandibanda",
+      linkedinUrl: "https://www.linkedin.com/in/sathwika-kandibanda"
     }
   ];
 
@@ -94,7 +94,7 @@ const AboutUs = () => {
             About Us
           </motion.h1>
           <motion.p 
-            className="text-2xl text-slate-600 dark:text-slate-400 max-w-4xl mx-auto leading-relaxed"
+            className="text-2xl text-slate-700 dark:text-slate-400 max-w-4xl mx-auto leading-relaxed"
             variants={itemVariants}
           >
             Meet the Team Behind DTAAD
@@ -110,7 +110,7 @@ const AboutUs = () => {
               <Users className="w-8 h-8 text-teal-600 dark:text-teal-400" />
               <span>Development Team</span>
             </h2>
-            <p className="text-lg text-slate-700 dark:text-slate-300 mb-8">
+            <p className="text-lg text-slate-800 dark:text-slate-300 mb-8">
               Meet the talented students behind DTAAD - each bringing unique skills and perspectives to create this innovative anomaly detection system.
             </p>
 
@@ -131,7 +131,7 @@ const AboutUs = () => {
                   </div>
 
                   <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">{member.name}</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{member.rollNumber}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-500 mb-4">{member.branch}</p>
 
                   <div className="flex items-center justify-center space-x-4 mt-4">
                     <motion.a
@@ -141,7 +141,7 @@ const AboutUs = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       title={`View ${member.name}'s GitHub profile`}
-                      className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-200"
+                      className="inline-flex items-center space-x-2 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-200"
                     >
                       <Github className="w-5 h-5" />
                       <span className="text-sm">GitHub</span>
@@ -154,7 +154,7 @@ const AboutUs = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       title={`View ${member.name}'s LinkedIn profile`}
-                      className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                      className="inline-flex items-center space-x-2 text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
                     >
                       <Linkedin className="w-5 h-5" />
                       <span className="text-sm">LinkedIn</span>
@@ -172,7 +172,7 @@ const AboutUs = () => {
         >
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-6">Get Started</h2>
-            <p className="text-lg text-slate-700 dark:text-slate-300 mb-8">
+            <p className="text-lg text-slate-800 dark:text-slate-300 mb-8">
               Ready to experience the power of advanced anomaly detection? Join our platform and start analyzing your time series data with state-of-the-art AI technology.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

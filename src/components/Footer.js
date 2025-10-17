@@ -32,17 +32,16 @@ const Footer = () => {
             </div>
 
             {/* Repository Link */}
-            <motion.a
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
+            <a
               href="https://github.com/EhsaasN/DUAL_TCN_ATTN"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200"
+              title="https://github.com/EhsaasN/DUAL_TCN_ATTN.git"
+              className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
             >
               <Github size={20} />
               <span className="text-sm font-medium">Repository</span>
-            </motion.a>
+            </a>
 
             {/* Project Description */}
             <div className="space-y-2 max-w-2xl mx-auto">

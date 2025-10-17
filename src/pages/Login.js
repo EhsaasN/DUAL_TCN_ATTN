@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Github, Chrome } from 'lucide-react';
+import { Eye, EyeOff, Mail, User, Github, Chrome } from 'lucide-react'; // removed Lock import
 
 const Login = ({ onLogin, isLoggedIn }) => {
   const [formData, setFormData] = useState({
@@ -116,7 +116,7 @@ const Login = ({ onLogin, isLoggedIn }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -125,23 +125,10 @@ const Login = ({ onLogin, isLoggedIn }) => {
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="text-center">
-          <motion.div
-            animate={{ 
-              boxShadow: [
-                "0 0 20px rgba(0,255,255,0.3)",
-                "0 0 30px rgba(0,255,255,0.5)",
-                "0 0 20px rgba(0,255,255,0.3)"
-              ]
-            }}
-            transition={{ duration: 1, repeat: Infinity }}
-            className="w-16 h-16 bg-gradient-to-br from-dtaad-cyan to-dtaad-purple rounded-2xl flex items-center justify-center mx-auto mb-6"
-          >
-            <Lock className="w-8 h-8 text-white" />
-          </motion.div>
-          <h2 className="text-3xl font-bold gradient-text mb-2">
+          <h2 className="text-3xl font-bold gradient-text mb-2" title="https://github.com/EhsaasN/DUAL_TCN_ATTN.git">
             Welcome Back
           </h2>
-          <p className="text-gray-400">
+          <p className="text-slate-600 dark:text-gray-400">
             Sign in to access your DTAAD dashboard
           </p>
         </motion.div>
@@ -150,16 +137,16 @@ const Login = ({ onLogin, isLoggedIn }) => {
         <motion.form 
           variants={itemVariants}
           onSubmit={handleSubmit} 
-          className="glass p-8 rounded-2xl border border-white/10"
+          className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm p-8 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg"
         >
           <div className="space-y-6">
             {/* Name Field */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                 Full Name
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-gray-400" />
                 <input
                   id="name"
                   name="name"
@@ -168,8 +155,8 @@ const Login = ({ onLogin, isLoggedIn }) => {
                   required
                   value={formData.name}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-3 py-3 glass border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
-                    errors.name ? 'border-red-400' : 'border-white/10'
+                  className={`w-full pl-10 pr-3 py-3 bg-slate-50 dark:bg-slate-800 border rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
+                    errors.name ? 'border-red-400' : 'border-slate-300 dark:border-white/10'
                   }`}
                   placeholder="Enter your full name"
                 />
@@ -181,11 +168,11 @@ const Login = ({ onLogin, isLoggedIn }) => {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-gray-400" />
                 <input
                   id="email"
                   name="email"
@@ -194,8 +181,8 @@ const Login = ({ onLogin, isLoggedIn }) => {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-3 py-3 glass border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
-                    errors.email ? 'border-red-400' : 'border-white/10'
+                  className={`w-full pl-10 pr-3 py-3 bg-slate-50 dark:bg-slate-800 border rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
+                    errors.email ? 'border-red-400' : 'border-slate-300 dark:border-white/10'
                   }`}
                   placeholder="Enter your email"
                 />
@@ -207,11 +194,10 @@ const Login = ({ onLogin, isLoggedIn }) => {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="password"
                   name="password"
@@ -220,15 +206,15 @@ const Login = ({ onLogin, isLoggedIn }) => {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-12 py-3 glass border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
-                    errors.password ? 'border-red-400' : 'border-white/10'
+                  className={`w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
+                    errors.password ? 'border-red-400' : 'border-slate-300 dark:border-white/10'
                   }`}
                   placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-dtaad-cyan transition-colors duration-300"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-600 dark:text-gray-400 hover:text-dtaad-cyan transition-colors duration-300"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -240,11 +226,10 @@ const Login = ({ onLogin, isLoggedIn }) => {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                 Confirm Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -253,15 +238,15 @@ const Login = ({ onLogin, isLoggedIn }) => {
                   required
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-12 py-3 glass border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
-                    errors.confirmPassword ? 'border-red-400' : 'border-white/10'
+                  className={`w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dtaad-cyan focus:border-transparent transition-all duration-300 ${
+                    errors.confirmPassword ? 'border-red-400' : 'border-slate-300 dark:border-white/10'
                   }`}
                   placeholder="Confirm your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-dtaad-cyan transition-colors duration-300"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-600 dark:text-gray-400 hover:text-dtaad-cyan transition-colors duration-300"
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -280,7 +265,7 @@ const Login = ({ onLogin, isLoggedIn }) => {
                   type="checkbox"
                   className="h-4 w-4 text-dtaad-cyan focus:ring-dtaad-cyan border-gray-300 rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600 dark:text-gray-400">
                   Remember me
                 </label>
               </div>
@@ -299,7 +284,8 @@ const Login = ({ onLogin, isLoggedIn }) => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={isLoading}
-              className="group w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-dtaad-cyan to-dtaad-purple hover:glow-cyan focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dtaad-cyan disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+              className="group w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white
+                bg-gradient-to-r from-cyan-600 to-purple-700 dark:from-dtaad-cyan dark:to-dtaad-purple hover:glow-cyan focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dtaad-cyan disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">
@@ -315,7 +301,7 @@ const Login = ({ onLogin, isLoggedIn }) => {
 
         {/* Sign Up Link */}
         <motion.div variants={itemVariants} className="text-center">
-          <p className="text-gray-400">
+          <p className="text-slate-600 dark:text-gray-400">
             Don't have an account?{' '}
             <Link
               to="/signup"
@@ -330,7 +316,7 @@ const Login = ({ onLogin, isLoggedIn }) => {
         <motion.div variants={itemVariants} className="text-center">
           <Link
             to="/"
-            className="text-sm text-gray-500 hover:text-gray-400 transition-colors duration-300"
+            className="text-sm text-slate-700 dark:text-gray-400 hover:text-slate-600 dark:hover:text-gray-300 transition-colors duration-300"
           >
             Continue as Guest →
           </Link>

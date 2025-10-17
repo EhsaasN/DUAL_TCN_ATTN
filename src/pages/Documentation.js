@@ -70,7 +70,7 @@ const Documentation = () => {
       case 'in-progress':
         return <Clock className="w-5 h-5 text-blue-400" />;
       default:
-        return <AlertCircle className="w-5 h-5 text-gray-400" />;
+        return <AlertCircle className="w-5 h-5 text-slate-600 dark:text-gray-400" />;
     }
   };
 
@@ -98,7 +98,7 @@ const Documentation = () => {
           <h1 className="text-4xl md:text-6xl font-bold gradient-text mb-6">
             Documentation
           </h1>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-slate-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
             Comprehensive technical documentation for DTAAD - Dual TCN-Attention Networks for Anomaly Detection
           </p>
         </motion.div>
@@ -119,7 +119,7 @@ const Documentation = () => {
               Full Technical Documentation
             </h2>
             
-            <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
               Access our comprehensive documentation including architecture details, API reference, 
               performance benchmarks, and implementation guides.
             </p>
@@ -162,7 +162,7 @@ const Documentation = () => {
                       {getStatusIcon(section.status)}
                       <span className={`text-sm font-medium ${
                         section.status === 'complete' ? 'text-green-400' : 
-                        section.status === 'in-progress' ? 'text-blue-400' : 'text-gray-400'
+                        section.status === 'in-progress' ? 'text-blue-400' : 'text-slate-600 dark:text-gray-400'
                       }`}>
                         {section.status === 'complete' ? 'Available' : 
                          section.status === 'in-progress' ? 'In Progress' : 'Coming Soon'}
@@ -172,7 +172,7 @@ const Documentation = () => {
                 </div>
               </div>
               
-              <p className="text-gray-400 leading-relaxed">
+              <p className="text-slate-600 dark:text-gray-400 leading-relaxed">
                 {section.description}
               </p>
             </motion.div>

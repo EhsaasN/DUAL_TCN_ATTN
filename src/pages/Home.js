@@ -200,7 +200,7 @@ const Home = ({ user, onLogout }) => {
                 <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-4">
                   Welcome to DTAAD
                 </h1>
-                <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
+                <p className="text-xl text-slate-700 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
                   Smart Anomaly Detection System
                 </p>
               </motion.div>
@@ -241,7 +241,7 @@ const Home = ({ user, onLogout }) => {
           >
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">Upload Your Data</h2>
-              <p className="text-slate-600 dark:text-slate-400">Upload CSV files to analyze time series data for anomalies</p>
+              <p className="text-slate-700 dark:text-slate-400">Upload CSV files to analyze time series data for anomalies</p>
             </div>
 
             <div className="max-w-2xl mx-auto">
@@ -275,7 +275,7 @@ const Home = ({ user, onLogout }) => {
                     </div>
                     <div>
                       <p className="text-slate-900 dark:text-slate-100 font-semibold text-lg">{uploadedFile.name}</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      <p className="text-sm text-slate-700 dark:text-slate-400 mt-1">
                         {(uploadedFile.size / 1024).toFixed(1)} KB
                       </p>
                     </div>
@@ -291,7 +291,7 @@ const Home = ({ user, onLogout }) => {
                     </div>
                     <div>
                       <p className="text-slate-700 dark:text-slate-300 font-semibold text-lg">Drop CSV file here</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">or click to browse</p>
+                      <p className="text-sm text-slate-700 dark:text-slate-400">or click to browse</p>
                       <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Supported formats: CSV, JSON</p>
                     </div>
                   </motion.div>
@@ -300,12 +300,12 @@ const Home = ({ user, onLogout }) => {
 
               <motion.button
                 whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.98 }}
                 onClick={runAnomalyDetection}
                 disabled={!uploadedFile || isProcessing}
                 className={`w-full mt-8 py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center space-x-2 ${
                   !uploadedFile || isProcessing
-                    ? 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                    ? 'bg-slate-300 dark:bg-slate-600 text-slate-700 dark:text-slate-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl'
                 }`}
               >
@@ -340,7 +340,7 @@ const Home = ({ user, onLogout }) => {
           >
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">Detection Results</h2>
-              <p className="text-slate-600 dark:text-slate-400">Analysis results and performance metrics</p>
+              <p className="text-slate-700 dark:text-slate-400">Analysis results and performance metrics</p>
             </div>
 
             {detectionResults ? (
@@ -419,7 +419,7 @@ const Home = ({ user, onLogout }) => {
                     >
                       <metric.icon className={`w-8 h-8 mx-auto mb-3 ${metric.color}`} />
                       <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">{metric.value}</div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">{metric.label}</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-400">{metric.label}</div>
                     </motion.div>
                   ))}
                 </motion.div>
@@ -427,7 +427,7 @@ const Home = ({ user, onLogout }) => {
             ) : (
               <div className="text-center py-16">
                 <Eye className="w-16 h-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
-                <p className="text-slate-600 dark:text-slate-400">Upload data and run detection to see results</p>
+                <p className="text-slate-700 dark:text-slate-400">Upload data and run detection to see results</p>
               </div>
             )}
           </motion.div>
@@ -456,7 +456,7 @@ const Home = ({ user, onLogout }) => {
                 </motion.div>
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">DTAAD Assistant</h2>
               </div>
-              <p className="text-slate-600 dark:text-slate-400">Ask me anything about anomaly detection and your results</p>
+              <p className="text-slate-700 dark:text-slate-400">Ask me anything about anomaly detection and your results</p>
             </div>
 
             <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 flex flex-col">
@@ -483,7 +483,7 @@ const Home = ({ user, onLogout }) => {
                       >
                         <p className="text-sm leading-relaxed">{message.text}</p>
                         <p className={`text-xs mt-2 ${
-                          message.type === 'bot' ? 'text-slate-500 dark:text-slate-400' : 'text-teal-100'
+                          message.type === 'bot' ? 'text-slate-700 dark:text-slate-400' : 'text-teal-100'
                         }`}>
                           {message.timestamp.toLocaleTimeString()}
                         </p>
@@ -550,7 +550,7 @@ const Home = ({ user, onLogout }) => {
           >
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">Technical Documentation</h2>
-              <p className="text-slate-600 dark:text-slate-400">Access comprehensive documentation and guides</p>
+              <p className="text-slate-700 dark:text-slate-400">Access comprehensive documentation and guides</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -585,16 +585,15 @@ const Home = ({ user, onLogout }) => {
                 <p className="text-slate-600 dark:text-slate-300 mb-6">
                   View the complete source code and contribute to the DTAAD project on GitHub.
                 </p>
-                <motion.a
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <a
                   href="https://github.com/EhsaasN/DUAL_TCN_ATTN"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-3 px-4 bg-slate-700 dark:bg-slate-600 hover:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl font-medium transition-all duration-300 inline-block text-center"
+                  title="https://github.com/EhsaasN/DUAL_TCN_ATTN.git"
+                  className="w-full py-3 px-4 bg-slate-700 dark:bg-slate-600 hover:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl font-medium inline-block text-center"
                 >
                   View Repository
-                </motion.a>
+                </a>
               </motion.div>
             </div>
           </motion.div>
@@ -669,7 +668,7 @@ const Home = ({ user, onLogout }) => {
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
-                <item.icon size={20} className={activeSection === item.id ? 'text-teal-600 dark:text-teal-400' : 'text-slate-500 dark:text-slate-400'} />
+                <item.icon size={20} className={activeSection === item.id ? 'text-teal-600 dark:text-teal-400' : 'text-slate-700 dark:text-slate-400'} />
                 <span className="font-medium flex-1">{item.label}</span>
                 {activeSection === item.id && (
                   <ChevronDown size={16} className="text-teal-600 dark:text-teal-400" />

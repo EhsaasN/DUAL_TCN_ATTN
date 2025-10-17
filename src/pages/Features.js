@@ -47,7 +47,7 @@ const Features = () => {
             DTAAD Features
           </motion.h1>
           <motion.p 
-            className="text-2xl text-slate-600 dark:text-slate-400 max-w-4xl mx-auto leading-relaxed"
+            className="text-2xl text-slate-700 dark:text-slate-400 max-w-4xl mx-auto leading-relaxed"
             variants={itemVariants}
           >
             Discover the powerful capabilities that make DTAAD a cutting-edge solution for anomaly detection
@@ -105,7 +105,7 @@ const Features = () => {
               >
                 {feature.title}
               </motion.h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-slate-700 dark:text-slate-400 leading-relaxed">
                 {feature.description}
               </p>
             </motion.div>
@@ -125,7 +125,7 @@ const Features = () => {
                 <Database className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                 <span>Architecture</span>
               </h3>
-              <ul className="space-y-2 text-slate-700 dark:text-slate-300">
+              <ul className="space-y-2 text-slate-800 dark:text-slate-300">
                 <li className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-teal-600 rounded-full"></div>
                   <span>Dual TCN-Attention Network</span>
@@ -150,7 +150,7 @@ const Features = () => {
                 <Target className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                 <span>Performance</span>
               </h3>
-              <ul className="space-y-2 text-slate-700 dark:text-slate-300">
+              <ul className="space-y-2 text-slate-800 dark:text-slate-300">
                 <li className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-600 rounded-full"></div>
                   <span>97.2% Accuracy Rate</span>

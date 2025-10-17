@@ -69,7 +69,7 @@ const Navbar = ({ isLoggedIn, user, onLogout }) => {
                   className={`px-4 py-2 text-base font-medium transition-all duration-300 relative overflow-hidden ${
                     isActive(item.path)
                       ? 'text-teal-600 dark:text-teal-400'
-                      : 'text-slate-700 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400'
+                      : 'text-slate-800 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400'
                   }`}
                 >
                   <motion.span
@@ -90,105 +90,119 @@ const Navbar = ({ isLoggedIn, user, onLogout }) => {
               </motion.div>
             ))}
           </div>
+        </div>
+      </div>
 
-          {/* Right side - Theme Toggle and Auth */}
-          <div className="flex items-center space-x-4">
+      {/* Right side elements - positioned absolutely at rightmost edge */}
+      <div className="absolute right-4 sm:right-6 lg:right-8 top-1/2 transform -translate-y-1/2 flex items-center space-x-4 z-50">
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <ThemeToggle />
+        </motion.div>
+
+        <a
+          href="https://github.com/EhsaasN/DUAL_TCN_ATTN"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="https://github.com/EhsaasN/DUAL_TCN_ATTN.git"
+          className="p-2 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <Github size={20} />
+        </a>
+
+        {/* Mobile menu button */}
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setIsOpen(!isOpen)}
+          className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden"
+        >
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </motion.div>
+        </motion.button>
+
+        {!isLoggedIn ? (
+          <div className="flex items-center space-x-3">
             <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <ThemeToggle />
+              <Link
+                to="/login"
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-teal-500/25 font-medium"
+              >
+                Login
+              </Link>
             </motion.div>
-
-            {!isLoggedIn ? (
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link
-                  to="/login"
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-teal-500/25"
-                >
-                  Login
-                </Link>
-              </motion.div>
-            ) : (
-              <div className="flex items-center space-x-3">
-                <motion.div
-                  className="flex items-center space-x-2 text-slate-700 dark:text-slate-300 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <User size={16} />
-                  <span className="text-sm font-medium">{user?.name || 'User'}</span>
-                </motion.div>
-                <motion.button
-                  whileHover={{ scale: 1.05, rotate: 180 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={onLogout}
-                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors duration-300 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20"
-                >
-                  <LogOut size={16} />
-                </motion.button>
-              </div>
-            )}
-
-            <motion.a
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              whileTap={{ scale: 0.9 }}
-              href="https://github.com/EhsaasN/DUAL_TCN_ATTN"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <Github size={20} />
-            </motion.a>
-
-            {/* Mobile menu button */}
+              <Link
+                to="/signup"
+                className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-slate-500/25 font-medium"
+              >
+                Sign Up
+              </Link>
+            </motion.div>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-3">
+            <motion.div
+              className="flex items-center space-x-2 text-slate-800 dark:text-slate-300 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800"
+              whileHover={{ scale: 1.02 }}
+            >
+              <User size={16} />
+              <span className="text-sm font-medium">{user?.name || 'User'}</span>
+            </motion.div>
             <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden"
+              whileHover={{ scale: 1.05, rotate: 180 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onLogout}
+              className="p-2 text-slate-800 dark:text-slate-300 hover:text-red-500 transition-colors duration-300 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20"
             >
-              <motion.div
-                animate={{ rotate: isOpen ? 180 : 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                {isOpen ? <X size={24} /> : <Menu size={24} />}
-              </motion.div>
+              <LogOut size={16} />
             </motion.button>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Mobile Navigation */}
-        <motion.div
-          initial={false}
-          animate={isOpen ? { opacity: 1, height: 'auto', y: 0 } : { opacity: 0, height: 0, y: -10 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="md:hidden overflow-hidden"
-        >
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            {navItems.map((item, index) => (
-              <motion.div
-                key={item.name}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
+      {/* Mobile Navigation */}
+      <motion.div
+        initial={false}
+        animate={isOpen ? { opacity: 1, height: 'auto', y: 0 } : { opacity: 0, height: 0, y: -10 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="md:hidden overflow-hidden"
+      >
+        <div className="px-2 pt-2 pb-3 space-y-1">
+          {navItems.map((item, index) => (
+            <motion.div
+              key={item.name}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Link
+                to={item.path}
+                onClick={() => setIsOpen(false)}
+                className={`block px-3 py-2 text-base font-medium transition-all duration-300 text-center rounded-xl ${
+                  isActive(item.path)
+                    ? 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-400/10'
+                    : 'text-slate-800 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
               >
-                <Link
-                  to={item.path}
-                  onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-2 text-base font-medium transition-all duration-300 text-center rounded-xl ${
-                    isActive(item.path)
-                      ? 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-400/10'
-                      : 'text-slate-700 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              </motion.div>
-            ))}
+                {item.name}
+              </Link>
+            </motion.div>
+          ))}
 
-            {!isLoggedIn ? (
+          {!isLoggedIn ? (
+            <div className="space-y-2">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -197,38 +211,51 @@ const Navbar = ({ isLoggedIn, user, onLogout }) => {
                 <Link
                   to="/login"
                   onClick={() => setIsOpen(false)}
-                  className="block px-3 py-2 text-base font-medium bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors duration-300 text-center mt-4"
+                  className="block px-3 py-2 text-base font-medium bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors duration-300 text-center"
                 >
                   Login
                 </Link>
               </motion.div>
-            ) : (
               <motion.div
-                className="px-3 py-2 space-y-2"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.5 }}
               >
-                <div className="flex items-center justify-center space-x-2 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2">
-                  <User size={16} />
-                  <span className="text-sm">{user?.name || 'User'}</span>
-                </div>
-                <motion.button
-                  onClick={() => {
-                    onLogout();
-                    setIsOpen(false);
-                  }}
-                  className="w-full px-3 py-2 text-base font-medium text-red-500 hover:text-red-600 transition-colors duration-300 text-center rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <Link
+                  to="/signup"
+                  onClick={() => setIsOpen(false)}
+                  className="block px-3 py-2 text-base font-medium bg-slate-600 text-white rounded-xl hover:bg-slate-700 transition-colors duration-300 text-center"
                 >
-                  Logout
-                </motion.button>
+                  Sign Up
+                </Link>
               </motion.div>
-            )}
-          </div>
-        </motion.div>
-      </div>
+            </div>
+          ) : (
+            <motion.div
+              className="px-3 py-2 space-y-2"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className="flex items-center justify-center space-x-2 text-slate-800 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2">
+                <User size={16} />
+                <span className="text-sm">{user?.name || 'User'}</span>
+              </div>
+              <motion.button
+                onClick={() => {
+                  onLogout();
+                  setIsOpen(false);
+                }}
+                className="w-full px-3 py-2 text-base font-medium text-red-500 hover:text-red-600 transition-colors duration-300 text-center rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Logout
+              </motion.button>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
     </motion.nav>
   );
 };
