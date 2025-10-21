@@ -24,16 +24,96 @@ matplotlib.use('Agg')  # Add this line
 import matplotlib.pyplot as plt
 plt.ioff() 
 
+# def train_optimized_enhanced_dtaad():
+#     """Train the Optimized Enhanced DTAAD model - 50% faster"""
+#     print("🚀 Training Optimized Enhanced DTAAD for ECG Anomaly Detection")
+#     print("⚡ Performance-Optimized Version (50% faster)")
+#     # print("📊 Novel Architecture for Research Publication")
+#     print("=" * 60)
+    
+#     # Load data
+#     train_loader, test_loader, labels = load_dataset('ecg_data')
+#     trainD, testD = next(iter(train_loader)), next(iter(test_loader))
+#     num_features = trainD.shape[1]
+    
+#     print(f"📊 Dataset Information:")
+#     print(f"  Training samples: {trainD.shape}")
+#     print(f"  Testing samples: {testD.shape}")
+#     print(f"  Number of features: {num_features}")
+#      # Device
+#     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#     print(f"🔧 Using device: {device}")
+    
+#     # Create Optimized Enhanced DTAAD model
+#     model = OptimizedEnhancedDTAAD(num_features).double()
+    
+#     # Optimized training settings
+#     optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4, weight_decay=1e-5)  # Slightly higher LR
+#     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 5, 0.9)  # Simpler scheduler
+      
+#     # Prepare data
+#     # trainO, testO = trainD, testD
+#     # trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
+#     trainO, testO = trainD.to(device), testD.to(device)
+#     trainD, testD = convert_to_windows(trainD.to(device), model), convert_to_windows(testD.to(device), model)
+    
+#     # Training parameters
+#     num_epochs = 20  # Reduced from 40 for faster training
+#     accuracy_list = []
+    
+   
+    
+#     # Training loop with timing
+#     print(f"\n🏋️  Starting Optimized Training (20 epochs)...")
+#     start_time = time()
+    
+#     for epoch in tqdm(range(num_epochs), desc="Training Optimized Enhanced DTAAD"):
+#         lossT, lr = backprop(epoch, model, trainD, trainO, optimizer, scheduler)
+#         accuracy_list.append((lossT, lr))
+        
+#         # Progress every 10 epochs
+#         if (epoch + 1) % 10 == 0:
+#             tqdm.write(f"Epoch {epoch + 1}/{num_epochs}, Loss: {lossT:.6f}, LR: {lr:.6f}")
+    
+#     training_time = time() - start_time
+#     print(f"\n⏱️  Optimized Training completed in {training_time:.2f} seconds")
+#     # print(f"   Optimized Enhanced (20 epochs): {training_time:.1f} seconds")
+    
+#     # Save model
+#     save_path = 'checkpoints/Optimized_Enhanced_DTAAD_ecg_data/'
+#     os.makedirs(save_path, exist_ok=True)
+    
+#     torch.save({
+#         'epoch': num_epochs - 1,
+#         'model_state_dict': model.state_dict(),
+#         'optimizer_state_dict': optimizer.state_dict(),
+#         'scheduler_state_dict': scheduler.state_dict(),
+#         'accuracy_list': accuracy_list,
+#         'training_time': training_time
+#     }, f'{save_path}/model.ckpt')
+    
+#     print(f"💾 Optimized Enhanced model saved to: {save_path}/model.ckpt")
+    
+#     # Plot training curves
+#     plot_accuracies(accuracy_list, 'Optimized_Enhanced_DTAAD_ecg_data')
+    
+#     # Test the model
+#     print(f"\n🧪 Testing Optimized Enhanced DTAAD...")
+#     test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer, scheduler)
+    
+#     return model
 def train_optimized_enhanced_dtaad():
     """Train the Optimized Enhanced DTAAD model - 50% faster"""
     print("🚀 Training Optimized Enhanced DTAAD for ECG Anomaly Detection")
-    print("⚡ Performance-Optimized Version (50% faster)")
-    # print("📊 Novel Architecture for Research Publication")
     print("=" * 60)
     
     # Load data
-    train_loader, test_loader, labels = load_dataset('MBA')
-    trainD, testD = next(iter(train_loader)), next(iter(test_loader))
+    train_loader, test_loader, labels = load_dataset('ecg_data')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"🔧 Using device: {device}")
+    
+    trainD, testD = next(iter(train_loader)).to(device), next(iter(test_loader)).to(device)
+    labels = labels.to(device) if isinstance(labels, torch.Tensor) else labels
     num_features = trainD.shape[1]
     
     print(f"📊 Dataset Information:")
@@ -42,34 +122,22 @@ def train_optimized_enhanced_dtaad():
     print(f"  Number of features: {num_features}")
     
     # Create Optimized Enhanced DTAAD model
-    model = OptimizedEnhancedDTAAD(num_features).double()
+    model = OptimizedEnhancedDTAAD(num_features).double().to(device)
     
     # Optimized training settings
-    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4, weight_decay=1e-5)  # Slightly higher LR
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 5, 0.9)  # Simpler scheduler
-    
-    print(f"\n🏗️  Optimized Enhanced Model Architecture:")
-    print(f"  ✅ Base DTAAD Framework")
-    print(f"  ✅ Lightweight ECG Attention (2-head, reduced dims)")
-    print(f"  ✅ Efficient Multi-Scale Extraction (2 scales)")
-    print(f"  ✅ Simplified Enhanced Attention (2-head)")
-    print(f"  ✅ Fixed Fusion Weights (no learnable params)")
-    print(f"  ⚡ Estimated 50% faster than full Enhanced DTAAD")
-    
+    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4, weight_decay=1e-5)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 5, 0.9)
+      
     # Prepare data
     trainO, testO = trainD, testD
     trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
     
     # Training parameters
-    num_epochs = 20  # Reduced from 40 for faster training
+    num_epochs = 20
     accuracy_list = []
     
-    # Device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"🔧 Using device: {device}")
-    
     # Training loop with timing
-    print(f"\n🏋️  Starting Optimized Training (30 epochs)...")
+    print(f"\n🏋️  Starting Optimized Training (20 epochs)...")
     start_time = time()
     
     for epoch in tqdm(range(num_epochs), desc="Training Optimized Enhanced DTAAD"):
@@ -82,10 +150,9 @@ def train_optimized_enhanced_dtaad():
     
     training_time = time() - start_time
     print(f"\n⏱️  Optimized Training completed in {training_time:.2f} seconds")
-    # print(f"   Optimized Enhanced (20 epochs): {training_time:.1f} seconds")
     
     # Save model
-    save_path = 'checkpoints/Optimized_Enhanced_DTAAD_MBA/'
+    save_path = 'checkpoints/Optimized_Enhanced_DTAAD_ecg_data/'
     os.makedirs(save_path, exist_ok=True)
     
     torch.save({
@@ -100,7 +167,7 @@ def train_optimized_enhanced_dtaad():
     print(f"💾 Optimized Enhanced model saved to: {save_path}/model.ckpt")
     
     # Plot training curves
-    plot_accuracies(accuracy_list, 'Optimized_Enhanced_DTAAD_MBA')
+    plot_accuracies(accuracy_list, 'Optimized_Enhanced_DTAAD_ecg_data')
     
     # Test the model
     print(f"\n🧪 Testing Optimized Enhanced DTAAD...")
@@ -110,15 +177,30 @@ def train_optimized_enhanced_dtaad():
 
 def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer, scheduler):
     # Force all data to CPU for plotting
-    device = torch.device('cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     """Test the optimized model"""
+    testD = testD.to(device)
+    testO = testO.to(device)
+    labels = labels.to(device) if isinstance(labels, torch.Tensor) else labels
     model.eval()
-    print(f"Testing Optimized_Enhanced_DTAAD on MBA")
+    print(f"Testing Optimized_Enhanced_DTAAD on ecg_data")
     
     # Get predictions
     loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False)
-    
+    # ascore_plot = loss.detach().cpu().numpy()
+    # Ensure y_pred is a NumPy array
+    if isinstance(loss, torch.Tensor):
+        ascore_plot = loss.detach().cpu().numpy()
+    else:
+        ascore_plot = loss
+    if isinstance(y_pred, torch.Tensor):
+        y_pred_plot = y_pred.detach().cpu().numpy()
+    else:
+        y_pred_plot = y_pred
+
+    # Convert testO to NumPy for plotting
+    testO_np = testO.detach().cpu().numpy() if isinstance(testO, torch.Tensor) else testO
     # Evaluation (same as original)
     if isinstance(testO, torch.Tensor):
         testO_np = testO.detach().cpu().numpy()
@@ -188,10 +270,6 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
     return result
 
 if __name__ == "__main__":
-    print("🎯 Optimized Enhanced DTAAD Training Script")
-    print("👤 User: EhsaasN")
-    print("📅 Date: 2025-10-11")
-    print("⚡ Performance-Optimized Version")
     
     start_time = time()
     optimized_model = train_optimized_enhanced_dtaad()
@@ -199,5 +277,4 @@ if __name__ == "__main__":
     
     print(f"\n✅ Optimized Enhanced DTAAD training completed!")
     print(f"⏱️  Total time: {total_time:.2f} seconds")
-    print(f"📊 Expected performance: 99.0-99.2% F1 score")
-    print(f"⚡ Speed improvement: ~50% faster than full Enhanced DTAAD")
+   

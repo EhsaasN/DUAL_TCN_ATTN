@@ -127,6 +127,9 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
     # device = torch.device('cpu')  # Force CPU usage
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # tqdm.write(f"Using device: {device}")
+    data = data.to(device)
+    dataO = dataO.to(device)
+    model = model.to(device)
     
     if 'DAGMM' in model.name:
         l = nn.MSELoss(reduction='none')

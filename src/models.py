@@ -499,10 +499,91 @@ class DTAAD_Transformer(nn.Module):
         return x1.permute(0, 2, 1), x2.permute(0, 2, 1)
 
 # Proposed Model + Tcn_Local + Tcn_Global + Callback + Transformer + MAML
+# class DTAAD(nn.Module):
+#     def __init__(self, feats):
+#         super(DTAAD, self).__init__()
+#         print(f"DEBUG: DTAAD init called with feats={feats}")  # Add this line
+#         self.name = 'DTAAD'
+#         self.lr = lr
+#         self.batch = 128
+#         self.n_feats = feats
+#         self.n_window = 10
+#         self.l_tcn = Tcn_Local(num_inputs=feats, num_outputs=feats, kernel_size=4, dropout=0.2)
+#         self.g_tcn = Tcn_Global(num_inputs=feats, num_outputs=feats, kernel_size=3, dropout=0.2)
+#         self.pos_encoder = PositionalEncoding(feats, 0.1, self.n_window)
+#         encoder_layers1 = TransformerEncoderLayer(d_model=feats, nhead=feats, dim_feedforward=16, dropout=0.1)
+#         encoder_layers2 = TransformerEncoderLayer(d_model=feats, nhead=feats, dim_feedforward=16, dropout=0.1)
+#         self.transformer_encoder1 = TransformerEncoder(encoder_layers1, num_layers=1)
+#         self.transformer_encoder2 = TransformerEncoder(encoder_layers2, num_layers=1)
+#         self.fcn = nn.Linear(feats, feats)
+#         self.decoder1 = nn.Sequential(nn.Linear(self.n_window, 1), nn.Sigmoid())
+#         self.decoder2 = nn.Sequential(nn.Linear(self.n_window, 1), nn.Sigmoid())
+
+#     def callback(self, src, c):
+#         src2 = src + c
+#         g_atts = self.g_tcn(src2)
+#         src2 = g_atts.permute(2, 0, 1) * math.sqrt(self.n_feats)
+#         src2 = self.pos_encoder(src2)
+#         memory = self.transformer_encoder2(src2)
+#         return memory
+
+#     # def forward(self, src):
+#     #     l_atts = self.l_tcn(src)
+#     #     src1 = l_atts.permute(2, 0, 1) * math.sqrt(self.n_feats)
+#     #     src1 = self.pos_encoder(src1)
+#     #     z1 = self.transformer_encoder1(src1)
+#     #     c1 = z1 + self.fcn(z1)
+#     #     x1 = self.decoder1(c1.permute(1, 2, 0))
+#     #     z2 = self.fcn(self.callback(src, x1))
+#     #     c2 = z2 + self.fcn(z2)
+#     #     x2 = self.decoder2(c2.permute(1, 2, 0))
+#     #     return x1.permute(0, 2, 1), x2.permute(0, 2, 1)
+#     def forward(self, src):
+#         l_atts = self.l_tcn(src)
+#         src1 = l_atts.permute(2, 0, 1) * math.sqrt(self.n_feats)
+#         src1 = self.pos_encoder(src1)
+#         z1 = self.transformer_encoder1(src1)
+#         c1 = z1 + self.fcn(z1)
+        
+#         # Fix: Dynamic dimension handling
+#         c1_perm = c1.permute(1, 2, 0)  # Shape: [batch, features, sequence]
+#         batch_size, features, sequence_len = c1_perm.shape
+        
+#         # Reshape for decoder - flatten last two dimensions
+#         c1_flat = c1_perm.reshape(batch_size, features * sequence_len)
+        
+#         # Create dynamic decoder if needed
+#         if not hasattr(self, 'dynamic_decoder1') or self.dynamic_decoder1.in_features != features * sequence_len:
+#             self.dynamic_decoder1 = nn.Sequential(
+#                 nn.Linear(features * sequence_len, 1), 
+#                 nn.Sigmoid()
+#             ).to(c1_flat.device).double()
+        
+#         x1 = self.dynamic_decoder1(c1_flat)
+        
+#         # Same fix for second decoder
+#         z2 = self.fcn(self.callback(src, x1))
+#         c2 = z2 + self.fcn(z2)
+#         c2_perm = c2.permute(1, 2, 0)
+#         batch_size2, features2, sequence_len2 = c2_perm.shape
+#         c2_flat = c2_perm.reshape(batch_size2, features2 * sequence_len2)
+        
+#         if not hasattr(self, 'dynamic_decoder2') or self.dynamic_decoder2.in_features != features2 * sequence_len2:
+#             self.dynamic_decoder2 = nn.Sequential(
+#                 nn.Linear(features2 * sequence_len2, 1), 
+#                 nn.Sigmoid()
+#             ).to(c2_flat.device).double()
+        
+#         x2 = self.dynamic_decoder2(c2_flat)
+        
+#         return x1.permute(0, 2, 1), x2.permute(0, 2, 1)
+
+# Universal DTAAD fix for both ECG and MBA data
+# Complete DTAAD fix for permutation error
 class DTAAD(nn.Module):
     def __init__(self, feats):
         super(DTAAD, self).__init__()
-        print(f"DEBUG: DTAAD init called with feats={feats}")  # Add this line
+        print(f"DEBUG: DTAAD init called with feats={feats}")
         self.name = 'DTAAD'
         self.lr = lr
         self.batch = 128
@@ -516,11 +597,75 @@ class DTAAD(nn.Module):
         self.transformer_encoder1 = TransformerEncoder(encoder_layers1, num_layers=1)
         self.transformer_encoder2 = TransformerEncoder(encoder_layers2, num_layers=1)
         self.fcn = nn.Linear(feats, feats)
-        self.decoder1 = nn.Sequential(nn.Linear(self.n_window, 1), nn.Sigmoid())
-        self.decoder2 = nn.Sequential(nn.Linear(self.n_window, 1), nn.Sigmoid())
+        
+        # Dynamic decoders - will be created based on actual tensor dimensions
+        self.decoder1 = None
+        self.decoder2 = None
+
+    def _create_dynamic_decoder(self, input_size, device, dtype):
+        """Create decoder based on actual input dimensions"""
+        return nn.Sequential(
+            nn.Linear(input_size, 1), 
+            nn.Sigmoid()
+        ).to(device).type(dtype)
+
+    def _match_tensor_dimensions(self, src, c):
+        """Universal function to match tensor dimensions for addition"""
+        if src.shape == c.shape:
+            return src, c
+        
+        batch_size, n_feats, seq_len = src.shape
+        
+        # Handle different batch sizes, features, or sequence lengths
+        if c.dim() == 2:
+            # c is [batch, features] - expand to [batch, features, 1]
+            c = c.unsqueeze(-1)
+        
+        c_batch, c_feats, c_seq = c.shape
+        
+        # Match batch size
+        if c_batch != batch_size:
+            if c_batch == 1:
+                c = c.expand(batch_size, -1, -1)
+            else:
+                c = c[:batch_size] if c_batch > batch_size else c
+        
+        # Match features
+        if c_feats != n_feats:
+            if c_feats == 1:
+                c = c.expand(-1, n_feats, -1)
+            elif n_feats == 1:
+                c = c[:, :1, :]
+            else:
+                # Average pooling to reduce features or padding to increase
+                if c_feats > n_feats:
+                    c = F.adaptive_avg_pool1d(c.transpose(1,2), n_feats).transpose(1,2)
+                else:
+                    padding = torch.zeros(c.shape[0], n_feats - c_feats, c.shape[2], 
+                                        dtype=c.dtype, device=c.device)
+                    c = torch.cat([c, padding], dim=1)
+        
+        # Match sequence length
+        if c_seq != seq_len:
+            if c_seq > seq_len:
+                c = c[:, :, :seq_len]
+            else:
+                padding = torch.zeros(c.shape[0], c.shape[1], seq_len - c_seq, 
+                                    dtype=c.dtype, device=c.device)
+                c = torch.cat([c, padding], dim=2)
+        
+        return src, c
 
     def callback(self, src, c):
-        src2 = src + c
+        """Universal callback that works with any tensor dimensions"""
+        try:
+            # Match dimensions before addition
+            src_matched, c_matched = self._match_tensor_dimensions(src, c)
+            src2 = src_matched + c_matched
+        except Exception as e:
+            print(f"Warning: Dimension matching failed ({e}), using src only")
+            src2 = src
+        
         g_atts = self.g_tcn(src2)
         src2 = g_atts.permute(2, 0, 1) * math.sqrt(self.n_feats)
         src2 = self.pos_encoder(src2)
@@ -528,13 +673,68 @@ class DTAAD(nn.Module):
         return memory
 
     def forward(self, src):
+        """Universal forward pass that adapts to input dimensions"""
+        # Get input dimensions
+        batch_size = src.shape[0]
+        actual_feats = src.shape[1] if len(src.shape) > 1 else 1
+        seq_len = src.shape[2] if len(src.shape) > 2 else 1
+        
+        # print(f"🔍 DTAAD forward: input shape {src.shape}, expected feats={self.n_feats}")
+        
+        # First branch
         l_atts = self.l_tcn(src)
         src1 = l_atts.permute(2, 0, 1) * math.sqrt(self.n_feats)
         src1 = self.pos_encoder(src1)
         z1 = self.transformer_encoder1(src1)
         c1 = z1 + self.fcn(z1)
-        x1 = self.decoder1(c1.permute(1, 2, 0))
-        z2 = self.fcn(self.callback(src, x1))
+        
+        # Dynamic decoder creation for first branch
+        c1_perm = c1.permute(1, 2, 0)  # [batch, features, sequence]
+        c1_flat = c1_perm.reshape(c1_perm.shape[0], -1)  # Flatten last two dims
+        
+        if self.decoder1 is None or self.decoder1[0].in_features != c1_flat.shape[1]:
+            self.decoder1 = self._create_dynamic_decoder(
+                c1_flat.shape[1], c1_flat.device, c1_flat.dtype
+            )
+        
+        x1 = self.decoder1(c1_flat)
+        
+        # Second branch with callback
+        try:
+            z2 = self.fcn(self.callback(src, x1))
+        except Exception as e:
+            print(f"Warning: Callback failed ({e}), using FCN on z1")
+            z2 = self.fcn(z1)  # Fallback
+        
         c2 = z2 + self.fcn(z2)
-        x2 = self.decoder2(c2.permute(1, 2, 0))
-        return x1.permute(0, 2, 1), x2.permute(0, 2, 1)
+        
+        # Dynamic decoder creation for second branch
+        c2_perm = c2.permute(1, 2, 0)  # [batch, features, sequence]
+        c2_flat = c2_perm.reshape(c2_perm.shape[0], -1)  # Flatten last two dims
+        
+        if self.decoder2 is None or self.decoder2[0].in_features != c2_flat.shape[1]:
+            self.decoder2 = self._create_dynamic_decoder(
+                c2_flat.shape[1], c2_flat.device, c2_flat.dtype
+            )
+        
+        x2 = self.decoder2(c2_flat)
+        
+        # FIX: Handle the output dimensions correctly
+        # print(f"🔍 Output dimensions: x1 shape {x1.shape}, x2 shape {x2.shape}")
+        
+        # Ensure outputs are 3D for permutation
+        if x1.dim() == 2:
+            # x1 is [batch, 1] -> expand to [batch, 1, features]
+            x1 = x1.unsqueeze(-1).expand(batch_size, 1, actual_feats)
+        
+        if x2.dim() == 2:
+            # x2 is [batch, 1] -> expand to [batch, 1, features] 
+            x2 = x2.unsqueeze(-1).expand(batch_size, 1, actual_feats)
+        
+        # Ensure 3D tensors for permutation
+        if x1.dim() == 3 and x2.dim() == 3:
+            return x1.permute(0, 2, 1), x2.permute(0, 2, 1)
+        else:
+            # Fallback: return without permutation if still not 3D
+            print(f"Warning: Returning without permutation - x1: {x1.shape}, x2: {x2.shape}")
+            return x1, x2

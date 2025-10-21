@@ -9,6 +9,7 @@ checkpoints/
 data/MSDS/metrics
 data/MSDS/train.csv
 data/MSDS/test.csv
+train_optimized_dtaad.py
 # src/enhanced_dtaad.py
 # src/enhanced_dtaad_optimized.py
 # inference.py
