@@ -230,7 +230,7 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
     testO_plot = np.roll(testO_plot, 1, 0)
     
     # Plot results
-    plotter('Optimized_Enhanced_DTAAD_MBA', testO_plot, y_pred_plot, ascore_plot, labels_plot)
+    plotter('Optimized_Enhanced_DTAAD_ecg_data', testO_plot, y_pred_plot, ascore_plot, labels_plot)
     
     # Evaluation
     df = pd.DataFrame()
