@@ -133,11 +133,11 @@ def train_optimized_enhanced_dtaad():
     trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
     
     # Training parameters
-    num_epochs = 20
+    num_epochs = 5
     accuracy_list = []
     
     # Training loop with timing
-    print(f"\n🏋️  Starting Optimized Training (20 epochs)...")
+    print(f"\n🏋️  Starting Optimized Training (5 epochs)...")
     start_time = time()
     
     for epoch in tqdm(range(num_epochs), desc="Training Optimized Enhanced DTAAD"):
