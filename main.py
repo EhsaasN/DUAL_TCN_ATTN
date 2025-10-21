@@ -127,8 +127,8 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
     # device = torch.device('cpu')  # Force CPU usage
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # tqdm.write(f"Using device: {device}")
-    data = data.to(device)
-    dataO = dataO.to(device)
+    data = data.to(device, dtype=torch.float64)
+    dataO = dataO.to(device, dtype=torch.float64)
     model = model.to(device)
     
     if 'DAGMM' in model.name:
@@ -376,7 +376,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
         _lambda = 0.8
         model.to(device)
         # data assumed shape: [num_windows, window_size, num_features]
-        data_x = torch.DoubleTensor(data).to(data.device)
+        data_x = data.to(torch.float64)
         dataset = TensorDataset(data_x, data_x)
         bs = model.batch if training else len(data)
         dataloader = DataLoader(dataset, batch_size=bs)
@@ -426,6 +426,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
                 z = model(window)
                 z = z[1].permute(1, 0, 2)
             loss = l(z, elem)[0]
+            loss=loss.to('cpu')
             return loss.detach().numpy(), z.detach().cpu().numpy()[0]
     else:
         model.to(device)
