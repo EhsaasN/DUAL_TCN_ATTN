@@ -376,7 +376,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
         _lambda = 0.8
         model.to(device)
         # data assumed shape: [num_windows, window_size, num_features]
-        data_x = torch.DoubleTensor(data)
+        data_x = torch.DoubleTensor(data).to(data.device)
         dataset = TensorDataset(data_x, data_x)
         bs = model.batch if training else len(data)
         dataloader = DataLoader(dataset, batch_size=bs)
