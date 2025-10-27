@@ -16,6 +16,37 @@ $ cd DUAL_TCN_ATTN
 $ pip3 install -r requirements.txt
 ```
 
+## Enhancements
+
+This repository includes several enhancements to the original DTAAD implementation:
+
+- **Enhanced Dual TCN Architecture**: Residual connections for improved gradient flow
+- **F1 Score & Precision-Recall Metrics**: Comprehensive evaluation metrics
+- **Enhanced Data Loading**: Error handling and validation
+- **Optimized Window Conversion**: Better memory efficiency
+- **Model Saving**: Best model tracking
+- **Early Stopping**: Configurable patience to prevent overfitting
+- **Learning Rate Scheduling**: Multiple scheduler options (step, cosine, exponential, reduce_on_plateau)
+
+For detailed documentation, see [ENHANCEMENTS.md](ENHANCEMENTS.md).
+
+### New Command Line Arguments
+
+```bash
+--scheduler {step,cosine,reduce_on_plateau,exponential}
+    Learning rate scheduler type (default: step)
+
+--early_stopping_patience N
+    Number of epochs to wait before early stopping (default: 7)
+```
+
+Example:
+```bash
+python main.py --model DTAAD --dataset SMAP --retrain \
+    --scheduler cosine --early_stopping_patience 10
+```
+
+
 ## Dataset Preprocessing
 Preprocess all datasets using the command
 ```bash

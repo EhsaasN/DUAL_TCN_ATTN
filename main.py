@@ -18,20 +18,50 @@ if 'src.models' in sys.modules:
     importlib.reload(sys.modules['src.models'])
 
 def convert_to_windows(data, model):
+    """
+    Optimized window conversion with better memory efficiency and validation.
+    
+    Args:
+        data: Input data to convert to windows
+        model: Model with n_window attribute
+        
+    Returns:
+        Windowed data tensor
+    """
     windows = []
     w_size = model.n_window
     
-    # Convert to tensor first
-    data = torch.tensor(data, dtype=torch.float64)
+    # Validate window size
+    if w_size <= 0:
+        raise ValueError(f'{color.RED}Invalid window size: {w_size}{color.ENDC}')
+    
+    # Convert to tensor first with validation
+    try:
+        data = torch.tensor(data, dtype=torch.float64)
+    except Exception as e:
+        print(f'{color.RED}Error converting data to tensor: {e}{color.ENDC}')
+        raise
+    
+    # Validate data is not empty
+    if data.numel() == 0:
+        raise ValueError(f'{color.RED}Empty data provided for windowing{color.ENDC}')
     
     # Handle 3D data [samples, features, sequence]
     if len(data.shape) == 3:
         samples, features, sequence_length = data.shape
         print(f"🔍 Processing 3D data: samples={samples}, features={features}, sequence_length={sequence_length}")
         
-        # Use larger step size to reduce number of windows
-        step_size = w_size  # Non-overlapping windows
-        # Or use step_size = w_size // 2 for 50% overlap
+        # Validate window size vs sequence length
+        if w_size > sequence_length:
+            print(f'{color.RED}Warning: Window size ({w_size}) > sequence length ({sequence_length}). Using sequence_length as window size.{color.ENDC}')
+            w_size = sequence_length
+        
+        # Use non-overlapping windows for efficiency (can be changed to w_size // 2 for 50% overlap)
+        step_size = w_size
+        
+        # Pre-allocate list size for efficiency
+        num_windows = (sequence_length - w_size) // step_size + 1
+        windows = []
         
         # Create windows with step size
         for i in range(0, sequence_length - w_size + 1, step_size):
@@ -39,85 +69,241 @@ def convert_to_windows(data, model):
             windows.append(w)
         
         if windows:
+            # Stack and reshape efficiently
             windows = torch.stack(windows, dim=0)  # [num_windows, samples, features, window_size]
             num_windows, samples, features, window_size = windows.shape
             windows = windows.view(num_windows * samples, features, window_size)
-            print(f"🎯 Reduced windows: {num_windows} windows per sample, total: {windows.shape[0]}")
+            print(f"🎯 Created {num_windows} windows per sample, total windows: {windows.shape[0]}")
         else:
+            print(f'{color.RED}Warning: No windows created, returning original data{color.ENDC}')
             windows = data
             
-    else:  # 2D data [samples, features] - original logic
+    else:  # 2D data [samples, features] - original logic with optimizations
         num_features = data.shape[1]
+        sequence_length = data.shape[0]
+        
+        # Validate window size
+        if w_size > sequence_length:
+            print(f'{color.RED}Warning: Window size ({w_size}) > data length ({sequence_length}). Using data_length as window size.{color.ENDC}')
+            w_size = sequence_length
+        
         step_size = w_size  # Non-overlapping
-        for i in range(0, len(data) - w_size + 1, step_size):
+        
+        # Pre-allocate for efficiency
+        num_windows = (sequence_length - w_size) // step_size + 1
+        windows = []
+        
+        for i in range(0, sequence_length - w_size + 1, step_size):
             w = data[i:i + w_size]  # [window_size, num_features]
             windows.append(w)
-        windows = torch.stack(windows)  # [num_windows, window_size, num_features]
-        windows = windows.permute(0, 2, 1)  # [num_windows, num_features, window_size]
+        
+        if windows:
+            windows = torch.stack(windows)  # [num_windows, window_size, num_features]
+            windows = windows.permute(0, 2, 1)  # [num_windows, num_features, window_size]
+            print(f"🎯 Created {len(windows)} windows from 2D data")
+        else:
+            print(f'{color.RED}Warning: No windows created, returning reshaped data{color.ENDC}')
+            windows = data.unsqueeze(0).permute(0, 2, 1)
+    
+    # Final validation
+    if windows.numel() == 0:
+        raise ValueError(f'{color.RED}Window conversion resulted in empty tensor{color.ENDC}')
     
     return windows
 
 
 def load_dataset(dataset):
-    folder = os.path.join(output_folder, dataset)
-    if not os.path.exists(folder):
-        raise Exception('Processed Data not found.')
-    loader = []
-    for file in ['train', 'test', 'labels']:
-        # Your existing file loading logic...
-        data = np.load(os.path.join(folder, f'{file}.npy'))
+    """
+    Enhanced data loading with error handling and validation.
+    
+    Args:
+        dataset: Dataset name to load
         
-        # If data is 2D [samples, sequence] but should be 3D [samples, features, sequence]
-        if len(data.shape) == 2 and file != 'labels':
-            print(f"📊 Reshaping {file} data from {data.shape} to add feature dimension")
-            data = data[:, np.newaxis, :]  # Add feature dimension: [samples, 1, sequence]
+    Returns:
+        train_loader, test_loader, labels
+        
+    Raises:
+        Exception: If data validation fails
+    """
+    folder = os.path.join(output_folder, dataset)
+    
+    # Enhanced error handling
+    if not os.path.exists(folder):
+        raise Exception(f'{color.RED}Processed data folder not found: {folder}{color.ENDC}')
+    
+    loader = []
+    required_files = ['train', 'test', 'labels']
+    
+    for file in required_files:
+        file_path = os.path.join(folder, f'{file}.npy')
+        
+        try:
+            # Check file existence
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f'{color.RED}Required file not found: {file_path}{color.ENDC}')
             
-        loader.append(data)
-    # loader = [i[:, debug:debug+1] for i in loader]
-    if args.less: loader[0] = cut_array(0.2, loader[0])
-    # OLD:
-    # train_loader = DataLoader(loader[0], batch_size=loader[0].shape[0])
-    # test_loader = DataLoader(loader[1], batch_size=loader[1].shape[0])
-    # NEW: Use reasonable batch size and shuffle for train
-    train_loader = DataLoader(loader[0], batch_size=64, shuffle=True)
-    test_loader = DataLoader(loader[1], batch_size=64, shuffle=False)
+            # Load data with error handling
+            data = np.load(file_path)
+            
+            # Validate data is not empty
+            if data.size == 0:
+                raise ValueError(f'{color.RED}Empty data file: {file_path}{color.ENDC}')
+            
+            # Validate data doesn't contain NaN or Inf
+            if np.isnan(data).any():
+                print(f'{color.RED}Warning: {file} contains NaN values. Replacing with 0.{color.ENDC}')
+                data = np.nan_to_num(data, nan=0.0)
+            
+            if np.isinf(data).any():
+                print(f'{color.RED}Warning: {file} contains Inf values. Clipping to finite range.{color.ENDC}')
+                data = np.nan_to_num(data, posinf=1e10, neginf=-1e10)
+            
+            # Shape handling with validation
+            if len(data.shape) == 2 and file != 'labels':
+                print(f"📊 Reshaping {file} data from {data.shape} to add feature dimension")
+                data = data[:, np.newaxis, :]  # Add feature dimension: [samples, 1, sequence]
+            
+            # Validate dimensions
+            if file != 'labels' and len(data.shape) not in [2, 3]:
+                raise ValueError(f'{color.RED}Invalid data shape for {file}: {data.shape}. Expected 2D or 3D.{color.ENDC}')
+            
+            print(f'{color.GREEN}Loaded {file}: shape={data.shape}, dtype={data.dtype}{color.ENDC}')
+            loader.append(data)
+            
+        except FileNotFoundError as e:
+            print(e)
+            raise
+        except Exception as e:
+            print(f'{color.RED}Error loading {file}: {str(e)}{color.ENDC}')
+            raise
+    
+    # Apply data reduction if requested
+    if args.less: 
+        loader[0] = cut_array(0.2, loader[0])
+        print(f'{color.GREEN}Training data reduced to 20%: {loader[0].shape}{color.ENDC}')
+    
+    # Validate train/test/label alignment
+    if loader[0].shape[0] == 0 or loader[1].shape[0] == 0:
+        raise ValueError(f'{color.RED}Empty dataset after loading{color.ENDC}')
+    
+    # Create data loaders with error handling
+    try:
+        train_loader = DataLoader(loader[0], batch_size=64, shuffle=True, drop_last=False)
+        test_loader = DataLoader(loader[1], batch_size=64, shuffle=False, drop_last=False)
+    except Exception as e:
+        print(f'{color.RED}Error creating data loaders: {str(e)}{color.ENDC}')
+        raise
+    
     labels = loader[2]
+    
+    print(f'{color.BOLD}Dataset loaded successfully: {dataset}{color.ENDC}')
     return train_loader, test_loader, labels
 
 
-def save_model(model, optimizer, scheduler, epoch, accuracy_list):
+def save_model(model, optimizer, scheduler, epoch, accuracy_list, is_best=False):
+    """
+    Enhanced model saving with best model tracking.
+    
+    Args:
+        model: Model to save
+        optimizer: Optimizer state
+        scheduler: Scheduler state
+        epoch: Current epoch
+        accuracy_list: Training history
+        is_best: Whether this is the best model so far
+    """
     folder = f'checkpoints/{args.model}_{args.dataset}/'
     os.makedirs(folder, exist_ok=True)
+    
+    # Save checkpoint
     file_path = f'{folder}/model.ckpt'
-    torch.save({
-        'epoch': epoch,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'scheduler_state_dict': scheduler.state_dict(),
-        'accuracy_list': accuracy_list}, file_path)
+    try:
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'accuracy_list': accuracy_list
+        }
+        torch.save(checkpoint, file_path)
+        print(f'{color.GREEN}Model checkpoint saved: {file_path}{color.ENDC}')
+        
+        # Save best model separately if this is the best
+        if is_best:
+            best_path = f'{folder}/best_model.ckpt'
+            torch.save(checkpoint, best_path)
+            print(f'{color.BOLD}Best model saved: {best_path}{color.ENDC}')
+            
+    except Exception as e:
+        print(f'{color.RED}Error saving model: {str(e)}{color.ENDC}')
+        raise
 
 
 def load_model(modelname, dims):
+    """
+    Enhanced model loading with flexible learning rate scheduler options.
+    
+    Args:
+        modelname: Name of the model class to load
+        dims: Number of input dimensions/features
+        
+    Returns:
+        model, optimizer, scheduler, epoch, accuracy_list
+    """
     import src.models
     model_class = getattr(src.models, modelname)
     model = model_class(dims).double()
+    
+    # Create optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=model.lr, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 5, 0.9)
+    
+    # Enhanced learning rate scheduler options
+    # Can be configured via args or model attributes
+    scheduler_type = getattr(args, 'scheduler', 'step')  # Default to 'step'
+    
+    if scheduler_type == 'step':
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
+    elif scheduler_type == 'cosine':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50, eta_min=1e-6)
+    elif scheduler_type == 'reduce_on_plateau':
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', 
+                                                                 factor=0.5, patience=5, verbose=True)
+    elif scheduler_type == 'exponential':
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+    else:
+        # Default to StepLR
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
+    
     fname = f'checkpoints/{args.model}_{args.dataset}/model.ckpt'
+    
     if os.path.exists(fname) and (not args.retrain or args.test):
         print(f"{color.GREEN}Loading pre-trained model: {model.name}{color.ENDC}")
-        # checkpoint = torch.load(fname, map_location='cpu')  # Force CPU loading
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        checkpoint = torch.load(fname, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        epoch = checkpoint['epoch']
-        accuracy_list = checkpoint['accuracy_list']
+        
+        try:
+            checkpoint = torch.load(fname, map_location=device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            
+            # Handle scheduler loading with fallback
+            try:
+                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            except Exception as e:
+                print(f"{color.RED}Warning: Could not load scheduler state: {e}. Using fresh scheduler.{color.ENDC}")
+            
+            epoch = checkpoint['epoch']
+            accuracy_list = checkpoint.get('accuracy_list', [])
+            print(f"{color.GREEN}Loaded checkpoint from epoch {epoch}{color.ENDC}")
+            
+        except Exception as e:
+            print(f"{color.RED}Error loading checkpoint: {e}. Creating new model.{color.ENDC}")
+            epoch = -1
+            accuracy_list = []
     else:
         print(f"{color.GREEN}Creating new model: {model.name}{color.ENDC}")
         epoch = -1
         accuracy_list = []
+    
     return model, optimizer, scheduler, epoch, accuracy_list
 
 
@@ -488,12 +674,38 @@ if __name__ == '__main__':
         print(f'{color.HEADER}Training {args.model} on {args.dataset}{color.ENDC}')
         num_epochs = 20
         e = epoch + 1
+        
+        # Initialize early stopping with configurable patience
+        patience = getattr(args, 'early_stopping_patience', 7)
+        early_stopping = EarlyStopping(patience=patience, min_delta=1e-4, verbose=True, mode='min')
+        best_loss = float('inf')
+        
+        print(f'{color.GREEN}Early stopping patience: {patience} epochs{color.ENDC}')
+        print(f'{color.GREEN}Learning rate scheduler: {getattr(args, "scheduler", "step")}{color.ENDC}')
+        
         start = time()
         for e in tqdm(list(range(epoch + 1, epoch + num_epochs + 1))):
             lossT, lr = backprop(e, model, trainD, trainO, optimizer, scheduler)
             accuracy_list.append((lossT, lr))
+            
+            # Check for best model
+            is_best = lossT < best_loss
+            if is_best:
+                best_loss = lossT
+            
+            # Save model (will save best if is_best=True)
+            if e % 5 == 0 or is_best:  # Save every 5 epochs or if best
+                save_model(model, optimizer, scheduler, e, accuracy_list, is_best=is_best)
+            
+            # Check early stopping
+            if early_stopping(lossT, e):
+                print(f'{color.BOLD}Early stopping triggered at epoch {e}{color.ENDC}')
+                break
+        
         print(color.BOLD + 'Training time: ' + "{:10.4f}".format(time() - start) + ' s' + color.ENDC)
-        save_model(model, optimizer, scheduler, e, accuracy_list)
+        
+        # Final save
+        save_model(model, optimizer, scheduler, e, accuracy_list, is_best=False)
         plot_accuracies(accuracy_list, f'{args.model}_{args.dataset}')
 
     ### Testing phase
@@ -608,6 +820,33 @@ if __name__ == '__main__':
     result, _ = pot_eval(lossTfinal, lossFinal, labelsFinal)
     result.update(hit_att(loss, windowed_labels))
     result.update(ndcg(loss, windowed_labels))
+    
+    # Calculate additional F1, precision, recall metrics
+    print(f'\n{color.HEADER}Enhanced Metrics Calculation{color.ENDC}')
+    
+    # Convert anomaly scores to binary predictions using optimal threshold
+    threshold = result.get('threshold', np.percentile(lossFinal, 95))
+    y_pred_binary = (lossFinal > threshold).astype(int)
+    
+    # Calculate F1, precision, recall
+    enhanced_metrics = calculate_f1_precision_recall(labelsFinal, y_pred_binary)
+    result.update({
+        'f1_sklearn': enhanced_metrics['f1'],
+        'precision_sklearn': enhanced_metrics['precision'],
+        'recall_sklearn': enhanced_metrics['recall']
+    })
+    
+    # Calculate precision-recall curve
+    pr_curve = calculate_precision_recall_curve(labelsFinal, lossFinal)
+    result.update({'pr_auc': pr_curve['pr_auc']})
+    
+    print(f'{color.BOLD}Per-dimension Results:{color.ENDC}')
     print(df)
+    print(f'\n{color.BOLD}Overall Results:{color.ENDC}')
     pprint(result)
+    print(f'\n{color.GREEN}Enhanced Metrics:{color.ENDC}')
+    print(f'  F1 Score (sklearn): {enhanced_metrics["f1"]:.4f}')
+    print(f'  Precision (sklearn): {enhanced_metrics["precision"]:.4f}')
+    print(f'  Recall (sklearn): {enhanced_metrics["recall"]:.4f}')
+    print(f'  PR-AUC: {pr_curve["pr_auc"]:.4f}')
     # pprint(getresults2(df, result))

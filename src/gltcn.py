@@ -30,36 +30,78 @@ class TemporalCnn(nn.Module):
         return self.net(x)
 
 class Tcn_Local(nn.Module):
+    """Enhanced Local TCN with improved temporal modeling"""
     def __init__(self, num_inputs, num_outputs, kernel_size=3, dropout=0.2):
         super(Tcn_Local, self).__init__()
         layers = []
         num_levels = 3
+        
         # First layer: in_channels=num_inputs, out_channels=num_outputs
         layers.append(TemporalCnn(num_inputs, num_outputs, kernel_size, stride=1, dilation=1,
                                   padding=(kernel_size - 1), dropout=dropout))
+        
         # Next layers: in_channels=num_outputs, out_channels=num_outputs
         for i in range(1, num_levels):
             layers.append(TemporalCnn(num_outputs, num_outputs, kernel_size, stride=1, dilation=1,
                                       padding=(kernel_size - 1), dropout=dropout))
+        
         self.network = nn.Sequential(*layers)
+        
+        # Add residual connection for better gradient flow
+        self.residual = nn.Conv1d(num_inputs, num_outputs, 1) if num_inputs != num_outputs else None
+        self.relu = nn.ReLU()
 
     def forward(self, x):
-        return self.network(x)
+        """Forward pass with residual connection"""
+        out = self.network(x)
+        
+        # Apply residual connection if dimensions differ
+        if self.residual is not None:
+            res = self.residual(x)
+        else:
+            res = x
+        
+        # Match dimensions for residual addition
+        if out.shape[-1] != res.shape[-1]:
+            res = res[:, :, :out.shape[-1]]
+        
+        return self.relu(out + res)
 
 class Tcn_Global(nn.Module):
+    """Enhanced Global TCN with improved long-range dependency modeling"""
     def __init__(self, num_inputs, num_outputs, kernel_size=3, dropout=0.2):
         super(Tcn_Global, self).__init__()
         layers = []
         num_levels = math.ceil(math.log2(max(((num_inputs - 1) * (2 - 1) / (kernel_size - 1) + 1), 1)))
+        
         # First layer: in_channels=num_inputs, out_channels=num_outputs
         layers.append(TemporalCnn(num_inputs, num_outputs, kernel_size, stride=1, dilation=1,
                                   padding=(kernel_size - 1), dropout=dropout))
-        # Next layers: in_channels=num_outputs, out_channels=num_outputs
+        
+        # Next layers with exponentially increasing dilation
         for i in range(1, num_levels):
             dilation_size = 2 ** i
             layers.append(TemporalCnn(num_outputs, num_outputs, kernel_size, stride=1, dilation=dilation_size,
                                       padding=(kernel_size - 1) * dilation_size, dropout=dropout))
+        
         self.network = nn.Sequential(*layers)
+        
+        # Add residual connection for better gradient flow
+        self.residual = nn.Conv1d(num_inputs, num_outputs, 1) if num_inputs != num_outputs else None
+        self.relu = nn.ReLU()
 
     def forward(self, x):
-        return self.network(x)
+        """Forward pass with residual connection"""
+        out = self.network(x)
+        
+        # Apply residual connection if dimensions differ
+        if self.residual is not None:
+            res = self.residual(x)
+        else:
+            res = x
+        
+        # Match dimensions for residual addition
+        if out.shape[-1] != res.shape[-1]:
+            res = res[:, :, :out.shape[-1]]
+        
+        return self.relu(out + res)
