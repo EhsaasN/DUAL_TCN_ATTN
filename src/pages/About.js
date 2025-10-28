@@ -37,8 +37,8 @@ const AboutUs = () => {
       linkedinUrl: "https://www.linkedin.com/in/ehsaas-nahata-836544347/"
     },
     {
-      name: "Honesha M",
-      branch: "CS",
+      name: "Honeysha M",
+      branch: "CSM",
       github: "Honeymagam",
       githubUrl: "https://github.com/Honeymagam",
       linkedin: "honeysha-magam",
