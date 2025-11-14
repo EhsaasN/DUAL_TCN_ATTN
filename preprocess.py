@@ -7,6 +7,8 @@ import json
 from src.folderconstants import *
 from shutil import copyfile
 import glob
+import numpy as np
+np.random.seed(42)
 
 datasets = ['synthetic', 'SMD', 'SWaT', 'SMAP', 'MSL', 'WADI', 'MSDS', 'UCR', 'MBA', 'NAB']
 
@@ -143,7 +145,8 @@ def load_data(dataset):
         X = (X - X.min(axis=0)) / (np.ptp(X,axis=0) + 1e-4)
 
         idx = np.arange(X.shape[0])
-        np.random.shuffle(idx)
+        # np.random.shuffle(idx)
+        idx = np.random.permutation(idx)
         X, y = X[idx], y[idx]
 
         split = int(0.8 * X.shape[0])

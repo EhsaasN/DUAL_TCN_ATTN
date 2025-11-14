@@ -125,7 +125,7 @@ def train_optimized_enhanced_dtaad():
     model = OptimizedEnhancedDTAAD(num_features).double().to(device)
     
     # Optimized training settings
-    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4, weight_decay=1e-5)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 5, 0.9)
       
     # Prepare data
