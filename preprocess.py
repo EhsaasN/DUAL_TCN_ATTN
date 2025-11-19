@@ -8,7 +8,7 @@ from src.folderconstants import *
 from shutil import copyfile
 import glob
 import numpy as np
-np.random.seed(42)
+np.random.seed(82)
 
 datasets = ['synthetic', 'SMD', 'SWaT', 'SMAP', 'MSL', 'WADI', 'MSDS', 'UCR', 'MBA', 'NAB']
 
