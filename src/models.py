@@ -2,13 +2,20 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pickle
-import dgl.nn
-from dgl.nn.pytorch import GATConv
+# import dgl.nn
+# from dgl.nn.pytorch import GATConv
 from torch.nn import TransformerEncoder
 from src.gltcn import *
 from src.dlutils import *
 from src.constants import *
-
+# Handle optional DGL dependency
+try:
+    import dgl.nn
+    from dgl.nn.pytorch import GATConv
+    DGL_AVAILABLE = True
+except ImportError:
+    DGL_AVAILABLE = False
+    print("Warning: DGL not available. GDN model will not work.")
 torch.manual_seed(1)
 torch.cuda.manual_seed(1)
 
@@ -298,6 +305,9 @@ class MTAD_GAT(nn.Module):
 ## GDN Model (AAAI 21)
 class GDN(nn.Module):
     def __init__(self, feats):
+        if not DGL_AVAILABLE:
+            raise ImportError("DGL is required for GDN model. Please install DGL or use a different model.")
+        super(GDN, self).__init__()
         super(GDN, self).__init__()
         self.name = 'GDN'
         self.lr = 0.0001

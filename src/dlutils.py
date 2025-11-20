@@ -213,6 +213,7 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
+# Update the TransformerEncoderLayer class in src/dlutils.py
 class TransformerEncoderLayer(nn.Module):
     def __init__(self, d_model, nhead, dim_feedforward=16, dropout=0):
         super(TransformerEncoderLayer, self).__init__()
@@ -226,9 +227,10 @@ class TransformerEncoderLayer(nn.Module):
 
         self.activation = nn.LeakyReLU(True)
 
-    def forward(self, src, src_mask=None, src_key_padding_mask=None):
-        src2 = self.self_attn(src, src, src)[0]
-        self.att = self.self_attn(src, src, src)[1]
+    def forward(self, src, src_mask=None, src_key_padding_mask=None, is_causal=None):
+        # Updated to accept is_causal parameter for PyTorch 2.0+ compatibility
+        src2 = self.self_attn(src, src, src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
+        self.att = self.self_attn(src, src, src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[1]
         src = src + self.dropout1(src2)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
         src = src + self.dropout2(src2)
@@ -250,10 +252,11 @@ class TransformerDecoderLayer(nn.Module):
         self.activation = nn.LeakyReLU(True)
 
     def forward(self, tgt, memory, tgt_mask=None, memory_mask=None, tgt_key_padding_mask=None,
-                memory_key_padding_mask=None):
-        tgt2 = self.self_attn(tgt, tgt, tgt)[0]
+                memory_key_padding_mask=None, tgt_is_causal=None, memory_is_causal=None):
+        # Updated to accept is_causal parameters for PyTorch 2.0+ compatibility
+        tgt2 = self.self_attn(tgt, tgt, tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout1(tgt2)
-        tgt2 = self.multihead_attn(tgt, memory, memory)[0]
+        tgt2 = self.multihead_attn(tgt, memory, memory, attn_mask=memory_mask, key_padding_mask=memory_key_padding_mask)[0]
         tgt = tgt + self.dropout2(tgt2)
         tgt2 = self.linear2(self.dropout(self.activation(self.linear1(tgt))))
         tgt = tgt + self.dropout3(tgt2)

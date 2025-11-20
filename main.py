@@ -67,7 +67,7 @@ def load_model(modelname, dims):
     fname = f'checkpoints/{args.model}_{args.dataset}/model.ckpt'
     if os.path.exists(fname) and (not args.retrain or args.test):
         print(f"{color.GREEN}Loading pre-trained model: {model.name}{color.ENDC}")
-        checkpoint = torch.load(fname)
+        checkpoint = torch.load(fname, map_location='cpu')  # Force CPU loading
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
@@ -83,9 +83,11 @@ def load_model(modelname, dims):
 def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
     l = nn.MSELoss(reduction='mean' if training else 'none')
     feats = dataO.shape[1]
+    device = torch.device('cpu')  # Force CPU usage
+    
     if 'DAGMM' in model.name:
         l = nn.MSELoss(reduction='none')
-        model.to(torch.device(args.Device))
+        model.to(device)
         compute = ComputeLoss(model, 0.1, 0.005, 'cpu', model.n_gmm)
         n = epoch + 1
         w_size = model.n_window
@@ -93,7 +95,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
         l2s = []
         if training:
             for d in data:
-                d = d.to(torch.device(args.Device))
+                d = d.to(device)
                 _, x_hat, z, gamma = model(d)
                 l1, l2 = l(x_hat, d), l(gamma, d)
                 l1s.append(torch.mean(l1).item())
@@ -106,7 +108,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             tqdm.write(f'Epoch {epoch},\tL1 = {np.mean(l1s)},\tL2 = {np.mean(l2s)}')
             return np.mean(l1s) + np.mean(l2s), optimizer.param_groups[0]['lr']
         else:
-            model.to(torch.device('cpu'))
+            model.to(device)
             ae1s = []
             for d in data:
                 _, x_hat, _, _ = model(d)
@@ -117,14 +119,14 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             return loss.detach().numpy(), y_pred.detach().numpy()
     if 'Attention' in model.name: 
         l = nn.MSELoss(reduction='none')
-        model.to(torch.device(args.Device))
+        model.to(device)
         n = epoch + 1
         w_size = model.n_window
         l1s = []
         res = []
         if training:
             for d in data:
-                d = d.to(torch.device(args.Device))
+                d = d.to(device)
                 ae = model(d)
                 # res.append(torch.mean(ats, axis=0).view(-1))
                 l1 = l(ae, d)
@@ -138,7 +140,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             tqdm.write(f'Epoch {epoch},\tL1 = {np.mean(l1s)}')
             return np.mean(l1s), optimizer.param_groups[0]['lr']
         else:
-            model.to(torch.device('cpu'))
+            model.to(device)
             ae1s, y_pred = [], []
             for d in data:
                 ae1 = model(d)
@@ -150,9 +152,9 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
     elif 'OmniAnomaly' in model.name:
         if training:
             mses, klds = [], []
-            model.to(torch.device(args.Device))
+            model.to(device)
             for i, d in enumerate(data):
-                d = d.to(torch.device(args.Device))
+                d = d.to(device)
                 y_pred, mu, logvar, hidden = model(d, hidden if i else None)
                 MSE = l(y_pred, d)
                 KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=0)
@@ -166,7 +168,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             scheduler.step()
             return loss.item(), optimizer.param_groups[0]['lr']
         else:
-            model.to(torch.device('cpu'))
+            model.to(device)
             y_preds = []
             for i, d in enumerate(data):
                 y_pred, _, _, hidden = model(d, hidden if i else None)
@@ -176,13 +178,13 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             return MSE.detach().numpy(), y_pred.detach().numpy()
     elif 'USAD' in model.name:
         l = nn.MSELoss(reduction='none')
-        model.to(torch.device(args.Device))
+        model.to(device)
         n = epoch + 1
         w_size = model.n_window
         l1s, l2s = [], []
         if training:
             for d in data:
-                d = d.to(torch.device(args.Device))
+                d = d.to(device)
                 ae1s, ae2s, ae2ae1s = model(d)
                 l1 = (1 / n) * l(ae1s, d) + (1 - 1 / n) * l(ae2ae1s, d)
                 l2 = (1 / n) * l(ae2s, d) - (1 - 1 / n) * l(ae2ae1s, d)
@@ -196,7 +198,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             tqdm.write(f'Epoch {epoch},\tL1 = {np.mean(l1s)},\tL2 = {np.mean(l2s)}')
             return np.mean(l1s) + np.mean(l2s), optimizer.param_groups[0]['lr']
         else:
-            model.to(torch.device('cpu'))
+            model.to(device)
             ae1s, ae2s, ae2ae1s = [], [], []
             for d in data:
                 ae1, ae2, ae2ae1 = model(d)
@@ -210,13 +212,13 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             return loss.detach().numpy(), y_pred.detach().numpy()
     elif model.name in ['GDN', 'MTAD_GAT', 'MSCRED', 'CAE_M']:
         l = nn.MSELoss(reduction='none')
-        model.to(torch.device(args.Device))
+        model.to(device)
         n = epoch + 1
         w_size = model.n_window
         l1s = []
         if training:
             for i, d in enumerate(data):
-                d = d.to(torch.device(args.Device))
+                d = d.to(device)
                 if 'MTAD_GAT' in model.name:
                     x, h = model(d, h if i else None)
                 else:
@@ -229,7 +231,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             tqdm.write(f'Epoch {epoch},\tMSE = {np.mean(l1s)}')
             return np.mean(l1s), optimizer.param_groups[0]['lr']
         else:
-            model.to(torch.device('cpu'))
+            model.to(device)
             xs = []
             for d in data:
                 if 'MTAD_GAT' in model.name:
@@ -244,7 +246,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             return loss.detach().numpy(), y_pred.detach().numpy()
     elif 'GAN' in model.name:
         l = nn.MSELoss(reduction='none')
-        model.to(torch.device(args.Device))
+        model.to(device)
         bcel = nn.BCELoss(reduction='mean')
         msel = nn.MSELoss(reduction='mean')
         real_label, fake_label = torch.tensor([0.9]), torch.tensor([0.1])  # label smoothing
@@ -255,7 +257,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
         if training:
             for d in data:
                 # training discriminator
-                d = d.to(torch.device(args.Device))
+                d = d.to(device)
                 model.discriminator.zero_grad()
                 _, real, fake = model(d)
                 dl = bcel(real, real_label) + bcel(fake, fake_label)
@@ -277,7 +279,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             tqdm.write(f'Epoch {epoch},\tMSE = {np.mean(mses)},\tG = {np.mean(gls)},\tD = {np.mean(dls)}')
             return np.mean(gls) + np.mean(dls), optimizer.param_groups[0]['lr']
         else:
-            model.to(torch.device('cpu'))
+            model.to(device)
             outputs = []
             for d in data:
                 z, _, _ = model(d)
@@ -289,7 +291,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             return loss.detach().numpy(), y_pred.detach().numpy()
     elif 'TranAD' in model.name:
         l = nn.MSELoss(reduction='none')
-        model.to(torch.device(args.Device))
+        model.to(device)
         data_x = torch.DoubleTensor(data)
         dataset = TensorDataset(data_x, data_x)
         bs = model.batch if training else len(data)
@@ -299,7 +301,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
         l1s, l2s = [], [] 
         if training:
             for d, _ in dataloader:  
-                d = d.to(torch.device(args.Device))
+                d = d.to(device)
                 local_bs = d.shape[0] 
                 window = d.permute(1, 0, 2)  
                 elem = window[-1, :, :].view(1, local_bs, feats)
@@ -315,7 +317,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             tqdm.write(f'Epoch {epoch},\tL1 = {np.mean(l1s)}')
             return np.mean(l1s), optimizer.param_groups[0]['lr']
         else:
-            model.to(torch.device('cpu'))
+            model.to(device)
             for d, _ in dataloader:
                 window = d.permute(1, 0, 2)
                 elem = window[-1, :, :].view(1, bs, feats)
@@ -326,7 +328,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
     elif 'DTAAD' in model.name:
         l = nn.MSELoss(reduction='none')
         _lambda = 0.8
-        model.to(torch.device(args.Device))
+        model.to(device)
         data_x = torch.DoubleTensor(data)
         dataset = TensorDataset(data_x, data_x)
         bs = model.batch if training else len(data)
@@ -336,7 +338,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
         l1s, l2s = [], []
         if training:
             for d, _ in dataloader:
-                d = d.to(torch.device(args.Device))
+                d = d.to(device)
                 local_bs = d.shape[0]
                 window = d.permute(0, 2, 1)
                 elem = window[:, :, -1].view(1, local_bs, feats)
@@ -351,7 +353,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             tqdm.write(f'Epoch {epoch},\tL1 = {np.mean(l1s)}')
             return np.mean(l1s), optimizer.param_groups[0]['lr']
         else:
-            model.to(torch.device('cpu'))
+            model.to(device)
             for d, _ in dataloader:
                 window = d.permute(0, 2, 1)
                 elem = window[:, :, -1].view(1, bs, feats)
@@ -360,8 +362,8 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             loss = l(z, elem)[0]
             return loss.detach().numpy(), z.detach().numpy()[0]
     else:
-        model.to(torch.device(args.Device))
-        data = data.to(torch.device(args.Device))
+        model.to(device)
+        data = data.to(device)
         y_pred = model(data)
         loss = l(y_pred, data)
         if training:
@@ -372,7 +374,7 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             scheduler.step()
             return loss.item(), optimizer.param_groups[0]['lr']
         else:
-            model.to(torch.device('cpu'))
+            model.to(device)
             return loss.detach().numpy(), y_pred.detach().numpy()
 
 
@@ -423,7 +425,7 @@ if __name__ == '__main__':
         lt, l, ls = lossT[:, i], loss[:, i], labels[:, i]
         result, pred = pot_eval(lt, l, ls)
         preds.append(pred)
-        df = df.append(result, ignore_index=True)
+        df = pd.concat([df, pd.DataFrame([result])], ignore_index=True)
     # preds = np.concatenate([i.reshape(-1, 1) + 0 for i in preds], axis=1)
     # pd.DataFrame(preds, columns=[str(i) for i in range(10)]).to_csv('labels.csv')
     lossTfinal, lossFinal = np.mean(lossT, axis=1), np.mean(loss, axis=1)
