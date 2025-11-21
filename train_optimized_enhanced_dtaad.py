@@ -102,18 +102,18 @@ plt.ioff()
 #     test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer, scheduler)
     
 #     return model
-def train_optimized_enhanced_dtaad():
+def train_optimized_enhanced_dtaad(dataset='ecg_data'):
     """Train the Optimized Enhanced DTAAD model - 50% faster"""
-    print("🚀 Training Optimized Enhanced DTAAD for ECG Anomaly Detection")
+    print(f"🚀 Training Optimized Enhanced DTAAD for {dataset.upper()} Anomaly Detection")
     print("=" * 60)
     
     # Load data
-    train_loader, test_loader, labels = load_dataset('ecg_data')
+    train_loader, test_loader, labels = load_dataset(dataset)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"🔧 Using device: {device}")
     
     trainD, testD = next(iter(train_loader)).to(device), next(iter(test_loader)).to(device)
-    labels = labels.to(device) if isinstance(labels, torch.Tensor) else labels
+    labels = labels.to(device) if isinstance(labels, torch.Tensor) else torch.from_numpy(labels).to(device)
     num_features = trainD.shape[1]
     
     print(f"📊 Dataset Information:")
@@ -132,12 +132,31 @@ def train_optimized_enhanced_dtaad():
     trainO, testO = trainD, testD
     trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
     
+    # Also window the labels to match the windowed test data
+    if isinstance(labels, torch.Tensor):
+        labels_np = labels.cpu().numpy()
+    else:
+        labels_np = labels
+    
+    # Convert labels to windowed format to match testD
+    if len(labels_np.shape) == 3:
+        # Labels are (samples, features, time_steps) - apply same windowing
+        labels_windowed = convert_to_windows(torch.from_numpy(labels_np), model)
+        # Take the last time step of each window (same as we do for predictions)
+        # labels_windowed shape: [num_windows, features, window_size]
+        # We want the label for the last time step: [num_windows, features]
+        labels_windowed = labels_windowed[:, :, -1].cpu().numpy()  # [num_windows, features]
+    else:
+        labels_windowed = labels_np
+    
+    labels = torch.from_numpy(labels_windowed).to(device)
+    
     # Training parameters
     num_epochs = 5
     accuracy_list = []
     
     # Training loop with timing
-    print(f"\n🏋️  Starting Optimized Training (5 epochs)...")
+    print(f"\n🏋️  Starting Optimized Training ({num_epochs} epochs)...")
     start_time = time()
     
     for epoch in tqdm(range(num_epochs), desc="Training Optimized Enhanced DTAAD"):
@@ -152,7 +171,7 @@ def train_optimized_enhanced_dtaad():
     print(f"\n⏱️  Optimized Training completed in {training_time:.2f} seconds")
     
     # Save model
-    save_path = 'checkpoints/Optimized_Enhanced_DTAAD_ecg_data/'
+    save_path = f'checkpoints/Optimized_Enhanced_DTAAD_{dataset}/'
     os.makedirs(save_path, exist_ok=True)
     
     torch.save({
@@ -167,24 +186,24 @@ def train_optimized_enhanced_dtaad():
     print(f"💾 Optimized Enhanced model saved to: {save_path}/model.ckpt")
     
     # Plot training curves
-    plot_accuracies(accuracy_list, 'Optimized_Enhanced_DTAAD_ecg_data')
+    plot_accuracies(accuracy_list, f'Optimized_Enhanced_DTAAD_{dataset}')
     
     # Test the model
     print(f"\n🧪 Testing Optimized Enhanced DTAAD...")
-    test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer, scheduler)
+    test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer, scheduler, dataset)
     
     return model
 
-def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer, scheduler):
+def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer, scheduler, dataset='ecg_data'):
     # Force all data to CPU for plotting
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     """Test the optimized model"""
     testD = testD.to(device)
     testO = testO.to(device)
-    labels = labels.to(device) if isinstance(labels, torch.Tensor) else labels
+    labels = labels.to(device) if isinstance(labels, torch.Tensor) else torch.from_numpy(labels).to(device)
     model.eval()
-    print(f"Testing Optimized_Enhanced_DTAAD on ecg_data")
+    print(f"Testing Optimized_Enhanced_DTAAD on {dataset}")
     
     # Get predictions
     loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False)
@@ -217,8 +236,17 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
     
     labels_plot = np.zeros((len(testO_plot), 1))
     if len(labels.shape) > 1 and labels.shape[0] > 0:
-        repeat_factor = len(testO_plot) // len(labels) + 1
-        repeated_labels = np.tile(labels[:, 0], repeat_factor)
+        # Handle both multivariate and univariate labels
+        labels_cpu = labels.detach().cpu().numpy() if isinstance(labels, torch.Tensor) else labels
+        
+        # For multivariate data (MBA), take first feature's labels
+        if labels_cpu.shape[1] > 1:
+            labels_flat = labels_cpu[0, 0, :] if len(labels_cpu.shape) == 3 else labels_cpu[:, 0]
+        else:
+            labels_flat = labels_cpu[:, 0]
+            
+        repeat_factor = len(testO_plot) // len(labels_flat) + 1
+        repeated_labels = np.tile(labels_flat, repeat_factor)
         labels_plot[:, 0] = repeated_labels[:len(testO_plot)]
     
     min_len = min(len(testO_plot), len(y_pred_plot), len(ascore_plot))
@@ -230,20 +258,40 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
     testO_plot = np.roll(testO_plot, 1, 0)
     
     # Plot results
-    plotter('Optimized_Enhanced_DTAAD_ecg_data', testO_plot, y_pred_plot, ascore_plot, labels_plot)
+    plotter(f'Optimized_Enhanced_DTAAD_{dataset}', testO_plot, y_pred_plot, ascore_plot, labels_plot)
     
     # Evaluation
     df = pd.DataFrame()
     preds = []
     lossT, _ = backprop(0, model, trainD, trainO, optimizer, scheduler, training=False)
     
-    if len(labels.shape) == 2 and labels.shape[0] < loss.shape[0]:
-        original_samples = labels.shape[0]
-        windows_per_sample = loss.shape[0] // original_samples
-        windowed_labels = np.repeat(labels, windows_per_sample, axis=0)
-        windowed_labels = windowed_labels[:loss.shape[0]]
+    # Convert labels to numpy for evaluation
+    labels_np = labels.detach().cpu().numpy() if isinstance(labels, torch.Tensor) else labels
+    
+    # Labels should already be windowed and match loss.shape
+    # loss shape: [num_windows, features]
+    # labels shape should be: [num_windows, features]
+    if labels_np.shape[0] != loss.shape[0]:
+        print(f"⚠️  Warning: Labels shape {labels_np.shape} doesn't match loss shape {loss.shape}")
+        # Try to align them
+        if len(labels_np.shape) == 3:
+            # For multivariate data with shape (1, features, time_steps)
+            # Flatten to (time_steps, features)
+            windowed_labels = labels_np[0].T  # (time_steps, features)
+            # Repeat to match loss shape
+            if windowed_labels.shape[0] < loss.shape[0]:
+                windows_per_sample = loss.shape[0] // windowed_labels.shape[0]
+                windowed_labels = np.repeat(windowed_labels, windows_per_sample, axis=0)
+                windowed_labels = windowed_labels[:loss.shape[0]]
+        elif len(labels_np.shape) == 2 and labels_np.shape[0] < loss.shape[0]:
+            original_samples = labels_np.shape[0]
+            windows_per_sample = loss.shape[0] // original_samples
+            windowed_labels = np.repeat(labels_np, windows_per_sample, axis=0)
+            windowed_labels = windowed_labels[:loss.shape[0]]
+        else:
+            windowed_labels = labels_np
     else:
-        windowed_labels = labels
+        windowed_labels = labels_np
 
     for i in range(loss.shape[1]):
         lt, l, ls = lossT[:, i], loss[:, i], windowed_labels[:, i]
@@ -256,7 +304,7 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
         labelsFinal = np.mean(windowed_labels, axis=1)
         labelsFinal = (labelsFinal >= 0.5).astype(int)
     else:
-        labelsFinal = (np.sum(labels, axis=1) >= 1) + 0
+        labelsFinal = (np.sum(labels_np, axis=1) >= 1) + 0
     
     result, _ = pot_eval(lossTfinal, lossFinal, labelsFinal)
     result.update(hit_att(loss, windowed_labels))
@@ -270,9 +318,16 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
     return result
 
 if __name__ == "__main__":
+    # Get dataset from parser args instead of sys.argv
+    from src.parser import args as parser_args
+    
+    # If dataset specified in command line, use it; otherwise use parser default
+    dataset = parser_args.dataset if hasattr(parser_args, 'dataset') else 'ecg_data'
+    
+    print(f"🎯 Starting training for dataset: {dataset}")
     
     start_time = time()
-    optimized_model = train_optimized_enhanced_dtaad()
+    optimized_model = train_optimized_enhanced_dtaad(dataset)
     total_time = time() - start_time
     
     print(f"\n✅ Optimized Enhanced DTAAD training completed!")

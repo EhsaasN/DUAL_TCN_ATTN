@@ -63,24 +63,44 @@ def load_dataset(dataset):
     if not os.path.exists(folder):
         raise Exception('Processed Data not found.')
     loader = []
-    for file in ['train', 'test', 'labels']:
-        # Your existing file loading logic...
-        data = np.load(os.path.join(folder, f'{file}.npy'))
-        
-        # If data is 2D [samples, sequence] but should be 3D [samples, features, sequence]
-        if len(data.shape) == 2 and file != 'labels':
-            print(f"📊 Reshaping {file} data from {data.shape} to add feature dimension")
-            data = data[:, np.newaxis, :]  # Add feature dimension: [samples, 1, sequence]
-            
-        loader.append(data)
+    
+    # First, load all data to analyze structure
+    train_data = np.load(os.path.join(folder, 'train.npy'))
+    test_data = np.load(os.path.join(folder, 'test.npy'))
+    labels_data = np.load(os.path.join(folder, 'labels.npy'))
+    
+    # Determine data format based on shape characteristics
+    # Multivariate time series: (time_steps, features) where time_steps >> features
+    # Univariate multiple samples: (samples, sequence_length) where samples < sequence_length
+    
+    if len(train_data.shape) == 2:
+        # Heuristic: if second dimension is small (<=10), likely features (multivariate)
+        # otherwise, likely sequence_length (univariate with multiple samples)
+        if train_data.shape[1] <= 10 and train_data.shape[0] > train_data.shape[1]:
+            # Multivariate time series format: (time_steps, features)
+            # Reshape to: (1, features, time_steps) for single multivariate sample
+            print(f"📊 Detected multivariate time series data")
+            print(f"   Reshaping train from {train_data.shape} to (1, {train_data.shape[1]}, {train_data.shape[0]})")
+            train_data = train_data.T[np.newaxis, :, :]  # (1, features, time_steps)
+            test_data = test_data.T[np.newaxis, :, :]
+            labels_data = labels_data.T[np.newaxis, :, :] if len(labels_data.shape) == 2 else labels_data
+        else:
+            # Univariate with multiple samples: (samples, sequence_length)
+            # Reshape to: (samples, 1, sequence_length)
+            print(f"📊 Detected univariate data with multiple samples")
+            print(f"   Reshaping train from {train_data.shape} to ({train_data.shape[0]}, 1, {train_data.shape[1]})")
+            train_data = train_data[:, np.newaxis, :]  # (samples, 1, sequence_length)
+            test_data = test_data[:, np.newaxis, :]
+    
+    loader = [train_data, test_data, labels_data]
+    
     # loader = [i[:, debug:debug+1] for i in loader]
     if args.less: loader[0] = cut_array(0.2, loader[0])
-    # OLD:
-    # train_loader = DataLoader(loader[0], batch_size=loader[0].shape[0])
-    # test_loader = DataLoader(loader[1], batch_size=loader[1].shape[0])
-    # NEW: Use reasonable batch size and shuffle for train
-    train_loader = DataLoader(loader[0], batch_size=64, shuffle=True)
-    test_loader = DataLoader(loader[1], batch_size=64, shuffle=False)
+    
+    # Use appropriate batch size
+    batch_size = min(64, loader[0].shape[0])
+    train_loader = DataLoader(loader[0], batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(loader[1], batch_size=loader[1].shape[0], shuffle=False)
     labels = loader[2]
     return train_loader, test_loader, labels
 
@@ -387,19 +407,14 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             for d, _ in dataloader:
                 d = d.to(device)
                 local_bs = d.shape[0]
-                # Add debug print
-                # print(f"🔍 DTAAD backprop input d shape: {d.shape}")
-                # window = d.permute(0, 2, 1)  # [batch, features, window_size]
-                if d.shape[1] == 1 and d.shape[2] == 10:  # [batch, 1, 10] - already correct format
-                    window = d  # No permutation needed
-                else:
-                    window = d.permute(0, 2, 1)  # [batch, features, window_size]
-            
-                # print(f"🔍 DTAAD window shape: {window.shape}")
+                # Data comes from convert_to_windows in format [batch, features, window_size]
+                # No permutation needed - already in correct format
+                window = d
                 num_features = window.shape[1]
                 elem = window[:, :, -1].view(1, local_bs, num_features)  # [1, batch, features]
                 z = model(window)
-                l1 = _lambda * l(z[0].permute(1, 0, 2), elem) + (1 - _lambda) * l(z[1].permute(1, 0, 2), elem)
+                # z[0] and z[1] are [batch, features, 1] - need to permute to [1, batch, features]
+                l1 = _lambda * l(z[0].permute(2, 0, 1), elem) + (1 - _lambda) * l(z[1].permute(2, 0, 1), elem)
                 l1s.append(torch.mean(l1).item())
                 loss = torch.mean(l1)
                 optimizer.zero_grad()
@@ -412,19 +427,15 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             model.to(device)
             for d, _ in dataloader:
                 d = d.to(device)
-                
-                # Same dimension fix as training
-                if len(d.shape) == 3 and d.shape[2] == 10:  # [batch, features, window_size]
-                    window = d  # Already in correct format
-                    num_features = window.shape[1]
-                else:
-                    window = d.permute(0, 2, 1)
-                    num_features = window.shape[1]
-                
+                # Data comes from convert_to_windows in format [batch, features, window_size]
+                # No permutation needed - already in correct format
+                window = d
+                num_features = window.shape[1]
                 local_bs = d.shape[0]
                 elem = window[:, :, -1].view(1, local_bs, num_features)  # [1, batch, features]
                 z = model(window)
-                z = z[1].permute(1, 0, 2)
+                # z[1] is [batch, features, 1] - need to permute to [1, batch, features]
+                z = z[1].permute(2, 0, 1)
             loss = l(z, elem)[0]
             loss=loss.to('cpu')
             return loss.detach().numpy(), z.detach().cpu().numpy()[0]
