@@ -75,13 +75,33 @@ def convert_to_windows(data, model):
 def load_dataset(dataset):
     folder = os.path.join(output_folder, dataset)
     if not os.path.exists(folder):
-        raise Exception('Processed Data not found.')
+        raise Exception(f'Processed data not found for {dataset}.\n'
+                       f'Please run: python preprocess.py {dataset}\n'
+                       f'Expected folder: {folder}')
     loader = []
     
-    # First, load all data to analyze structure
-    train_data = np.load(os.path.join(folder, 'train.npy'))
-    test_data = np.load(os.path.join(folder, 'test.npy'))
-    labels_data = np.load(os.path.join(folder, 'labels.npy'))
+    # Special handling for SMAP/MSL which create multiple channel files
+    if dataset in ['SMAP', 'MSL']:
+        # List all train files to find available channels
+        train_files = [f for f in os.listdir(folder) if f.endswith('_train.npy')]
+        if not train_files:
+            raise Exception(f'No processed data files found for {dataset}.\n'
+                           f'Found folder but no *_train.npy files.\n'
+                           f'Please run: python preprocess.py {dataset}')
+        
+        # Use the first channel file
+        channel_name = train_files[0].replace('_train.npy', '')
+        print(f"📊 Loading {dataset} channel: {channel_name}")
+        print(f"   Available channels: {len(train_files)}")
+        
+        train_data = np.load(os.path.join(folder, f'{channel_name}_train.npy'))
+        test_data = np.load(os.path.join(folder, f'{channel_name}_test.npy'))
+        labels_data = np.load(os.path.join(folder, f'{channel_name}_labels.npy'))
+    else:
+        # Standard loading for other datasets
+        train_data = np.load(os.path.join(folder, 'train.npy'))
+        test_data = np.load(os.path.join(folder, 'test.npy'))
+        labels_data = np.load(os.path.join(folder, 'labels.npy'))
     
     # Special handling for different datasets
     # MBA, SMAP, MSL, etc: Keep as 2D (timesteps, features) for overlapping windows
