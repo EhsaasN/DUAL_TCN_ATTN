@@ -124,35 +124,66 @@ def train_optimized_enhanced_dtaad(dataset='ecg_data'):
     # Create Optimized Enhanced DTAAD model
     model = OptimizedEnhancedDTAAD(num_features).double().to(device)
     
+    # Dataset-specific hyperparameters
+    if dataset == 'MBA':
+        # MBA requires more epochs and different hyperparameters
+        num_epochs = 50  # Reduced from 100 for faster training, still enough for convergence
+        learning_rate = 1e-3
+        weight_decay = 1e-4
+        step_size = 10
+        gamma = 0.9
+        print(f"📈 MBA-specific hyperparameters:")
+        print(f"   Epochs: {num_epochs}")
+        print(f"   Learning rate: {learning_rate}")
+        print(f"   Weight decay: {weight_decay}")
+    else:
+        # Default for ECG and other datasets
+        num_epochs = 5
+        learning_rate = 4e-4
+        weight_decay = 1e-5
+        step_size = 5
+        gamma = 0.9
+    
     # Optimized training settings
-    optimizer = torch.optim.AdamW(model.parameters(), lr=4e-4, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 5, 0.9)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size, gamma)
       
     # Prepare data
     trainO, testO = trainD, testD
     trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model)
     
-    # Also window the labels to match the windowed test data
+    # Handle labels differently for MBA vs ECG
+    # MBA: overlapping windows means one label per window (one-to-one mapping)
+    # ECG: non-overlapping windows need label expansion
     if isinstance(labels, torch.Tensor):
         labels_np = labels.cpu().numpy()
     else:
         labels_np = labels
     
-    # Convert labels to windowed format to match testD
-    if len(labels_np.shape) == 3:
-        # Labels are (samples, features, time_steps) - apply same windowing
-        labels_windowed = convert_to_windows(torch.from_numpy(labels_np), model)
-        # Take the last time step of each window (same as we do for predictions)
-        # labels_windowed shape: [num_windows, features, window_size]
-        # We want the label for the last time step: [num_windows, features]
-        labels_windowed = labels_windowed[:, :, -1].cpu().numpy()  # [num_windows, features]
+    # For MBA/SMAP with 2D data and overlapping windows, labels are already aligned
+    # For ECG with 3D data and non-overlapping windows, we need to expand labels
+    if dataset in ['MBA', 'SMAP', 'MSL', 'SWaT', 'WADI', 'SMD', 'UCR', 'NAB', 'MSDS']:
+        # Multivariate datasets: labels shape (timesteps, features) matches windows
+        # No windowing needed - one-to-one mapping
+        print(f"📋 {dataset}: Using original labels (one-to-one with overlapping windows)")
+        labels = torch.from_numpy(labels_np).to(device)
+    elif len(trainD.shape) == 3 and trainD.shape[0] > 100:  # ECG case: many samples
+        # For ECG: Convert labels to windowed format to match testD
+        # Labels are (samples, features) - need to expand for windows
+        if len(labels_np.shape) == 2:
+            # Expand labels to match windowed data
+            original_samples = labels_np.shape[0]
+            num_windows = testD.shape[0]
+            windows_per_sample = num_windows // original_samples
+            labels_windowed = np.repeat(labels_np, windows_per_sample, axis=0)
+            labels_windowed = labels_windowed[:num_windows]
+            labels = torch.from_numpy(labels_windowed).to(device)
+        else:
+            labels = torch.from_numpy(labels_np).to(device)
     else:
-        labels_windowed = labels_np
-    
-    labels = torch.from_numpy(labels_windowed).to(device)
+        labels = torch.from_numpy(labels_np).to(device)
     
     # Training parameters
-    num_epochs = 5
     accuracy_list = []
     
     # Training loop with timing
@@ -163,8 +194,10 @@ def train_optimized_enhanced_dtaad(dataset='ecg_data'):
         lossT, lr = backprop(epoch, model, trainD, trainO, optimizer, scheduler)
         accuracy_list.append((lossT, lr))
         
-        # Progress every 10 epochs
-        if (epoch + 1) % 10 == 0:
+        # Progress reporting
+        if dataset == 'MBA' and (epoch + 1) % 10 == 0:
+            tqdm.write(f"Epoch {epoch + 1}/{num_epochs}, Loss: {lossT:.6f}, LR: {lr:.6f}")
+        elif (epoch + 1) % 10 == 0:
             tqdm.write(f"Epoch {epoch + 1}/{num_epochs}, Loss: {lossT:.6f}, LR: {lr:.6f}")
     
     training_time = time() - start_time
@@ -268,22 +301,20 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
     # Convert labels to numpy for evaluation
     labels_np = labels.detach().cpu().numpy() if isinstance(labels, torch.Tensor) else labels
     
-    # Labels should already be windowed and match loss.shape
-    # loss shape: [num_windows, features]
-    # labels shape should be: [num_windows, features]
-    if labels_np.shape[0] != loss.shape[0]:
+    # Handle different label formats
+    if dataset in ['MBA', 'SMAP', 'MSL', 'SWaT', 'WADI', 'SMD', 'UCR', 'NAB', 'MSDS']:
+        # Multivariate datasets with overlapping windows - labels should match windows one-to-one
+        if len(labels_np.shape) == 2 and labels_np.shape[0] == loss.shape[0]:
+            windowed_labels = labels_np
+            print(f"✅ {dataset}: Labels already aligned (overlapping windows)")
+        else:
+            # Shouldn't happen, but handle gracefully
+            windowed_labels = labels_np
+            print(f"⚠️  {dataset}: Unexpected label shape {labels_np.shape}, using as-is")
+    elif labels_np.shape[0] != loss.shape[0]:
+        # For other datasets, try to align
         print(f"⚠️  Warning: Labels shape {labels_np.shape} doesn't match loss shape {loss.shape}")
-        # Try to align them
-        if len(labels_np.shape) == 3:
-            # For multivariate data with shape (1, features, time_steps)
-            # Flatten to (time_steps, features)
-            windowed_labels = labels_np[0].T  # (time_steps, features)
-            # Repeat to match loss shape
-            if windowed_labels.shape[0] < loss.shape[0]:
-                windows_per_sample = loss.shape[0] // windowed_labels.shape[0]
-                windowed_labels = np.repeat(windowed_labels, windows_per_sample, axis=0)
-                windowed_labels = windowed_labels[:loss.shape[0]]
-        elif len(labels_np.shape) == 2 and labels_np.shape[0] < loss.shape[0]:
+        if len(labels_np.shape) == 2 and labels_np.shape[0] < loss.shape[0]:
             original_samples = labels_np.shape[0]
             windows_per_sample = loss.shape[0] // original_samples
             windowed_labels = np.repeat(labels_np, windows_per_sample, axis=0)
@@ -292,6 +323,8 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
             windowed_labels = labels_np
     else:
         windowed_labels = labels_np
+    
+    print(f"✅ Final shapes - loss: {loss.shape}, labels: {windowed_labels.shape}")
 
     for i in range(loss.shape[1]):
         lt, l, ls = lossT[:, i], loss[:, i], windowed_labels[:, i]

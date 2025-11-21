@@ -18,6 +18,11 @@ if 'src.models' in sys.modules:
     importlib.reload(sys.modules['src.models'])
 
 def convert_to_windows(data, model):
+    """
+    Convert data to windows.
+    - For ECG (large dataset): Use non-overlapping windows to prevent memory issues
+    - For MBA (small dataset): Use overlapping windows (original DTAAD approach) for better accuracy
+    """
     windows = []
     w_size = model.n_window
     
@@ -29,9 +34,8 @@ def convert_to_windows(data, model):
         samples, features, sequence_length = data.shape
         print(f"🔍 Processing 3D data: samples={samples}, features={features}, sequence_length={sequence_length}")
         
-        # Use larger step size to reduce number of windows
+        # Use non-overlapping windows for ECG to prevent memory issues
         step_size = w_size  # Non-overlapping windows
-        # Or use step_size = w_size // 2 for 50% overlap
         
         # Create windows with step size
         for i in range(0, sequence_length - w_size + 1, step_size):
@@ -46,14 +50,23 @@ def convert_to_windows(data, model):
         else:
             windows = data
             
-    else:  # 2D data [samples, features] - original logic
+    else:  # 2D data [samples, features] - MBA case
         num_features = data.shape[1]
-        step_size = w_size  # Non-overlapping
-        for i in range(0, len(data) - w_size + 1, step_size):
-            w = data[i:i + w_size]  # [window_size, num_features]
+        # Use OVERLAPPING windows for MBA (original DTAAD approach)
+        print(f"🔍 Processing 2D data: {data.shape[0]} timesteps, {num_features} features")
+        print(f"   Using OVERLAPPING windows (original DTAAD) for better accuracy")
+        
+        for i in range(len(data)):
+            if i >= w_size:
+                w = data[i - w_size:i]  # [window_size, num_features]
+            else:
+                # Pad with first sample repeated
+                w = torch.cat([data[0].repeat(w_size - i, 1), data[0:i]])
             windows.append(w)
+        
         windows = torch.stack(windows)  # [num_windows, window_size, num_features]
         windows = windows.permute(0, 2, 1)  # [num_windows, num_features, window_size]
+        print(f"🎯 Created {len(windows)} overlapping windows")
     
     return windows
 
@@ -69,27 +82,24 @@ def load_dataset(dataset):
     test_data = np.load(os.path.join(folder, 'test.npy'))
     labels_data = np.load(os.path.join(folder, 'labels.npy'))
     
-    # Determine data format based on shape characteristics
-    # Multivariate time series: (time_steps, features) where time_steps >> features
-    # Univariate multiple samples: (samples, sequence_length) where samples < sequence_length
+    # Special handling for different datasets
+    # MBA, SMAP, MSL, etc: Keep as 2D (timesteps, features) for overlapping windows
+    # ECG: Reshape to 3D (samples, 1, sequence) for non-overlapping windows
     
     if len(train_data.shape) == 2:
-        # Heuristic: if second dimension is small (<=10), likely features (multivariate)
-        # otherwise, likely sequence_length (univariate with multiple samples)
-        if train_data.shape[1] <= 10 and train_data.shape[0] > train_data.shape[1]:
-            # Multivariate time series format: (time_steps, features)
-            # Reshape to: (1, features, time_steps) for single multivariate sample
-            print(f"📊 Detected multivariate time series data")
-            print(f"   Reshaping train from {train_data.shape} to (1, {train_data.shape[1]}, {train_data.shape[0]})")
-            train_data = train_data.T[np.newaxis, :, :]  # (1, features, time_steps)
-            test_data = test_data.T[np.newaxis, :, :]
-            labels_data = labels_data.T[np.newaxis, :, :] if len(labels_data.shape) == 2 else labels_data
-        else:
-            # Univariate with multiple samples: (samples, sequence_length)
+        if dataset == 'ecg_data':
+            # ECG: Univariate with multiple samples: (samples, sequence_length)
             # Reshape to: (samples, 1, sequence_length)
-            print(f"📊 Detected univariate data with multiple samples")
+            print(f"📊 Detected univariate data with multiple samples (ECG)")
             print(f"   Reshaping train from {train_data.shape} to ({train_data.shape[0]}, 1, {train_data.shape[1]})")
             train_data = train_data[:, np.newaxis, :]  # (samples, 1, sequence_length)
+            test_data = test_data[:, np.newaxis, :]
+        else:
+            # MBA, SMAP, etc: Multivariate time series format: (time_steps, features)
+            # KEEP AS 2D for overlapping window processing
+            print(f"📊 Detected multivariate time series data ({dataset})")
+            print(f"   Keeping 2D format for overlapping windows: {train_data.shape}")
+            # Don't reshape - keep as (time_steps, features)
             test_data = test_data[:, np.newaxis, :]
     
     loader = [train_data, test_data, labels_data]
@@ -413,8 +423,8 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
                 num_features = window.shape[1]
                 elem = window[:, :, -1].view(1, local_bs, num_features)  # [1, batch, features]
                 z = model(window)
-                # z[0] and z[1] are [batch, features, 1] - need to permute to [1, batch, features]
-                l1 = _lambda * l(z[0].permute(2, 0, 1), elem) + (1 - _lambda) * l(z[1].permute(2, 0, 1), elem)
+                # Original DTAAD uses permute(1, 0, 2) - keep this for compatibility
+                l1 = _lambda * l(z[0].permute(1, 0, 2), elem) + (1 - _lambda) * l(z[1].permute(1, 0, 2), elem)
                 l1s.append(torch.mean(l1).item())
                 loss = torch.mean(l1)
                 optimizer.zero_grad()
@@ -425,6 +435,9 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
             return np.mean(l1s), optimizer.param_groups[0]['lr']
         else:  # Testing phase
             model.to(device)
+            all_losses = []
+            all_preds = []
+            
             for d, _ in dataloader:
                 d = d.to(device)
                 # Data comes from convert_to_windows in format [batch, features, window_size]
@@ -434,11 +447,19 @@ def backprop(epoch, model, data, dataO, optimizer, scheduler, training=True):
                 local_bs = d.shape[0]
                 elem = window[:, :, -1].view(1, local_bs, num_features)  # [1, batch, features]
                 z = model(window)
-                # z[1] is [batch, features, 1] - need to permute to [1, batch, features]
-                z = z[1].permute(2, 0, 1)
-            loss = l(z, elem)[0]
-            loss=loss.to('cpu')
-            return loss.detach().numpy(), z.detach().cpu().numpy()[0]
+                # Original DTAAD uses permute(1, 0, 2)
+                z_out = z[1].permute(1, 0, 2)
+                
+                # Compute loss for this batch
+                loss_batch = l(z_out, elem)[0]
+                all_losses.append(loss_batch.detach().cpu().numpy())
+                all_preds.append(z_out.detach().cpu().numpy()[0])
+            
+            # Concatenate all batches
+            loss = np.concatenate(all_losses, axis=0)
+            y_pred = np.concatenate(all_preds, axis=0)
+            
+            return loss, y_pred
     else:
         model.to(device)
         data = data.to(device)
