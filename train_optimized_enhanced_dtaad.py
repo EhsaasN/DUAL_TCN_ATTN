@@ -127,15 +127,17 @@ def train_optimized_enhanced_dtaad(dataset='ecg_data'):
     # Dataset-specific hyperparameters
     if dataset == 'MBA':
         # MBA requires more epochs and different hyperparameters
+        # Increased learning rate per user request to improve F1 score
         num_epochs = 50  # Reduced from 100 for faster training, still enough for convergence
-        learning_rate = 1e-3
+        learning_rate = 5e-3  # Increased from 1e-3 for faster convergence
         weight_decay = 1e-4
         step_size = 10
         gamma = 0.9
         print(f"📈 MBA-specific hyperparameters:")
         print(f"   Epochs: {num_epochs}")
-        print(f"   Learning rate: {learning_rate}")
+        print(f"   Learning rate: {learning_rate} (increased for better F1)")
         print(f"   Weight decay: {weight_decay}")
+        print(f"   Note: Using overlapping windows (no downsampling) for maximum accuracy")
     else:
         # Default for ECG and other datasets
         num_epochs = 5

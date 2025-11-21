@@ -53,8 +53,9 @@ def convert_to_windows(data, model):
     else:  # 2D data [samples, features] - MBA case
         num_features = data.shape[1]
         # Use OVERLAPPING windows for MBA (original DTAAD approach)
+        # NO DOWNSAMPLING - preserves all timesteps for maximum accuracy
         print(f"🔍 Processing 2D data: {data.shape[0]} timesteps, {num_features} features")
-        print(f"   Using OVERLAPPING windows (original DTAAD) for better accuracy")
+        print(f"   Using OVERLAPPING windows (NO downsampling) for better accuracy")
         
         for i in range(len(data)):
             if i >= w_size:
@@ -66,7 +67,7 @@ def convert_to_windows(data, model):
         
         windows = torch.stack(windows)  # [num_windows, window_size, num_features]
         windows = windows.permute(0, 2, 1)  # [num_windows, num_features, window_size]
-        print(f"🎯 Created {len(windows)} overlapping windows")
+        print(f"🎯 Created {len(windows)} overlapping windows (all {len(data)} timesteps preserved)")
     
     return windows
 
