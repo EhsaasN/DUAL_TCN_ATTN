@@ -100,8 +100,7 @@ def load_dataset(dataset):
             # KEEP AS 2D for overlapping window processing
             print(f"📊 Detected multivariate time series data ({dataset})")
             print(f"   Keeping 2D format for overlapping windows: {train_data.shape}")
-            # Don't reshape - keep as (time_steps, features)
-            test_data = test_data[:, np.newaxis, :]
+            # Don't reshape - keep BOTH train and test as (time_steps, features)
     
     loader = [train_data, test_data, labels_data]
     
@@ -109,7 +108,15 @@ def load_dataset(dataset):
     if args.less: loader[0] = cut_array(0.2, loader[0])
     
     # Use appropriate batch size
-    batch_size = min(64, loader[0].shape[0])
+    # For MBA/SMAP (2D multivariate): use full batch for overlapping windows
+    # For ECG (3D univariate): use smaller batches
+    if len(loader[0].shape) == 2:
+        # MBA case: load full dataset as single batch for overlapping window processing
+        batch_size = loader[0].shape[0]
+    else:
+        # ECG case: use reasonable batch size
+        batch_size = min(64, loader[0].shape[0])
+    
     train_loader = DataLoader(loader[0], batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(loader[1], batch_size=loader[1].shape[0], shuffle=False)
     labels = loader[2]
