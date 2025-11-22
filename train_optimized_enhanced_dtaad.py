@@ -209,12 +209,18 @@ def train_optimized_enhanced_dtaad(dataset='ecg_data'):
     save_path = f'checkpoints/Optimized_Enhanced_DTAAD_{dataset}/'
     os.makedirs(save_path, exist_ok=True)
     
-    # Get decoder dimensions if decoders exist
+    # Get decoder dimensions if decoders exist (with error handling)
     decoder_info = {}
-    if hasattr(model.model, 'decoder1') and model.model.decoder1 is not None:
-        decoder_info['decoder1_in_features'] = model.model.decoder1[0].in_features
-    if hasattr(model.model, 'decoder2') and model.model.decoder2 is not None:
-        decoder_info['decoder2_in_features'] = model.model.decoder2[0].in_features
+    try:
+        if hasattr(model.model, 'decoder1') and model.model.decoder1 is not None:
+            if hasattr(model.model.decoder1[0], 'in_features'):
+                decoder_info['decoder1_in_features'] = model.model.decoder1[0].in_features
+        if hasattr(model.model, 'decoder2') and model.model.decoder2 is not None:
+            if hasattr(model.model.decoder2[0], 'in_features'):
+                decoder_info['decoder2_in_features'] = model.model.decoder2[0].in_features
+    except (AttributeError, IndexError, TypeError) as e:
+        print(f"⚠️  Warning: Could not extract decoder dimensions: {e}")
+        print("   Checkpoint will still be saved, but may need retraining for identical test results")
     
     torch.save({
         'epoch': num_epochs - 1,
