@@ -104,7 +104,8 @@ def test_model(model_path, dataset_name):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     try:
-        checkpoint = torch.load(model_path, map_location=device)
+        # PyTorch 2.6+ requires weights_only=False for backward compatibility
+        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
     except Exception as e:
         print(f"❌ Error loading checkpoint: {e}")
         return None
