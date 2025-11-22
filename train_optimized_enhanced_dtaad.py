@@ -212,12 +212,34 @@ def train_optimized_enhanced_dtaad(dataset='ecg_data'):
     # Get decoder dimensions if decoders exist (with error handling)
     decoder_info = {}
     try:
-        if hasattr(model.model, 'decoder1') and model.model.decoder1 is not None:
-            if hasattr(model.model.decoder1[0], 'in_features'):
-                decoder_info['decoder1_in_features'] = model.model.decoder1[0].in_features
-        if hasattr(model.model, 'decoder2') and model.model.decoder2 is not None:
-            if hasattr(model.model.decoder2[0], 'in_features'):
-                decoder_info['decoder2_in_features'] = model.model.decoder2[0].in_features
+        # For OptimizedEnhancedDTAAD, the actual DTAAD model is in base_dtaad
+        if hasattr(model, 'base_dtaad'):
+            base_model = model.base_dtaad
+        else:
+            base_model = model
+        
+        # Extract decoder1 dimensions
+        if hasattr(base_model, 'decoder1') and base_model.decoder1 is not None:
+            # Check if decoder1 is a Sequential with Linear layer
+            if isinstance(base_model.decoder1, nn.Sequential) and len(base_model.decoder1) > 0:
+                first_layer = base_model.decoder1[0]
+                if isinstance(first_layer, nn.Linear) and hasattr(first_layer, 'in_features'):
+                    decoder_info['decoder1_in_features'] = first_layer.in_features
+                    print(f"   ✅ Captured decoder1 input features: {first_layer.in_features}")
+        
+        # Extract decoder2 dimensions
+        if hasattr(base_model, 'decoder2') and base_model.decoder2 is not None:
+            # Check if decoder2 is a Sequential with Linear layer
+            if isinstance(base_model.decoder2, nn.Sequential) and len(base_model.decoder2) > 0:
+                first_layer = base_model.decoder2[0]
+                if isinstance(first_layer, nn.Linear) and hasattr(first_layer, 'in_features'):
+                    decoder_info['decoder2_in_features'] = first_layer.in_features
+                    print(f"   ✅ Captured decoder2 input features: {first_layer.in_features}")
+        
+        if not decoder_info:
+            print(f"⚠️  Warning: Decoders not yet created (will be created during first forward pass)")
+            print("   Checkpoint will be saved without decoder metadata")
+            
     except (AttributeError, IndexError, TypeError) as e:
         print(f"⚠️  Warning: Could not extract decoder dimensions: {e}")
         print("   Checkpoint will still be saved, but may need retraining for identical test results")
