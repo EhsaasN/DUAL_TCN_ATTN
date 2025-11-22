@@ -209,13 +209,22 @@ def train_optimized_enhanced_dtaad(dataset='ecg_data'):
     save_path = f'checkpoints/Optimized_Enhanced_DTAAD_{dataset}/'
     os.makedirs(save_path, exist_ok=True)
     
+    # Get decoder dimensions if decoders exist
+    decoder_info = {}
+    if hasattr(model.model, 'decoder1') and model.model.decoder1 is not None:
+        decoder_info['decoder1_in_features'] = model.model.decoder1[0].in_features
+    if hasattr(model.model, 'decoder2') and model.model.decoder2 is not None:
+        decoder_info['decoder2_in_features'] = model.model.decoder2[0].in_features
+    
     torch.save({
         'epoch': num_epochs - 1,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'scheduler_state_dict': scheduler.state_dict(),
         'accuracy_list': accuracy_list,
-        'training_time': training_time
+        'training_time': training_time,
+        'decoder_info': decoder_info,  # Save decoder dimensions for exact reconstruction
+        'dataset': dataset  # Save dataset name for proper loading
     }, f'{save_path}/model.ckpt')
     
     print(f"💾 Optimized Enhanced model saved to: {save_path}/model.ckpt")

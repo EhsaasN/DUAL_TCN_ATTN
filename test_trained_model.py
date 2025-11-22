@@ -141,14 +141,19 @@ def test_model(model_path, dataset_name):
         decoder_loaded = False
         if 'model.decoder1.0.weight' in state_dict and 'model.decoder2.0.weight' in state_dict:
             try:
-                # Get the saved decoder dimensions
-                dec1_in_features = state_dict['model.decoder1.0.weight'].shape[1]
-                dec2_in_features = state_dict['model.decoder2.0.weight'].shape[1]
+                # Get the saved decoder dimensions from checkpoint metadata or weights
+                if 'decoder_info' in checkpoint:
+                    dec1_in_features = checkpoint['decoder_info'].get('decoder1_in_features')
+                    dec2_in_features = checkpoint['decoder_info'].get('decoder2_in_features')
+                else:
+                    # Fallback to extracting from weight dimensions
+                    dec1_in_features = state_dict['model.decoder1.0.weight'].shape[1]
+                    dec2_in_features = state_dict['model.decoder2.0.weight'].shape[1]
                 
                 # Import necessary modules for decoder creation
                 import torch.nn as nn
                 
-                # Recreate decoders with correct dimensions
+                # Recreate decoders with exact trained dimensions
                 model.model.decoder1 = nn.Sequential(
                     nn.Linear(dec1_in_features, 1),
                     nn.Sigmoid()
@@ -159,16 +164,21 @@ def test_model(model_path, dataset_name):
                     nn.Sigmoid()
                 ).to(device).double()
                 
-                # Now load the decoder weights
-                model.model.decoder1[0].weight.data = state_dict['model.decoder1.0.weight']
-                model.model.decoder1[0].bias.data = state_dict['model.decoder1.0.bias']
-                model.model.decoder2[0].weight.data = state_dict['model.decoder2.0.weight']
-                model.model.decoder2[0].bias.data = state_dict['model.decoder2.0.bias']
+                # Now load the trained decoder weights
+                model.model.decoder1[0].weight.data = state_dict['model.decoder1.0.weight'].to(device)
+                model.model.decoder1[0].bias.data = state_dict['model.decoder1.0.bias'].to(device)
+                model.model.decoder2[0].weight.data = state_dict['model.decoder2.0.weight'].to(device)
+                model.model.decoder2[0].bias.data = state_dict['model.decoder2.0.bias'].to(device)
                 
                 decoder_loaded = True
+                print(f"   ✅ Decoder weights loaded successfully!")
+                print(f"      Decoder1 input features: {dec1_in_features}")
+                print(f"      Decoder2 input features: {dec2_in_features}")
             except Exception as e:
                 print(f"⚠️  Could not load decoder weights: {e}")
                 print(f"   Decoders will be recreated on first forward pass")
+                import traceback
+                traceback.print_exc()
         
         model.eval()
     except Exception as e:
