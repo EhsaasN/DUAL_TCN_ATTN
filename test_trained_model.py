@@ -77,8 +77,27 @@ def test_model(model_path, dataset_name):
         print(f"\nMake sure to preprocess first: python preprocess.py {dataset_name}")
         return None
     
-    trainD, testD = next(iter(train_loader)), next(iter(test_loader))
+    # Load FULL dataset in one batch (same as training script)
+    # This ensures we get all samples, not just first batch
+    train_data_list = []
+    for batch in train_loader:
+        train_data_list.append(batch)
+    if len(train_data_list) == 1:
+        trainD = train_data_list[0]
+    else:
+        trainD = torch.cat(train_data_list, dim=0)
+    
+    test_data_list = []
+    for batch in test_loader:
+        test_data_list.append(batch)
+    if len(test_data_list) == 1:
+        testD = test_data_list[0]
+    else:
+        testD = torch.cat(test_data_list, dim=0)
+    
     trainO, testO = trainD, testD
+    
+    print(f"  ✅ Loaded full dataset: train={trainD.shape}, test={testD.shape}")
     
     # Get data info
     if isinstance(testO, torch.Tensor):
