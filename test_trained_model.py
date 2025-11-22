@@ -102,10 +102,20 @@ def test_model(model_path, dataset_name):
     # Load trained weights
     print(f"📥 Loading trained weights from checkpoint...")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    checkpoint = torch.load(model_path, map_location=device)
     
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.eval()
+    try:
+        checkpoint = torch.load(model_path, map_location=device)
+    except Exception as e:
+        print(f"❌ Error loading checkpoint: {e}")
+        return None
+    
+    try:
+        model.load_state_dict(checkpoint['model_state_dict'])
+        model.eval()
+    except Exception as e:
+        print(f"❌ Error loading model state: {e}")
+        print(f"\nCheckpoint keys: {checkpoint.keys()}")
+        return None
     
     epoch = checkpoint.get('epoch', 'unknown')
     print(f"✅ Model loaded successfully!")
@@ -122,17 +132,29 @@ def test_model(model_path, dataset_name):
     
     # Convert to windows
     print(f"\n🪟 Converting data to windows...")
-    trainD = convert_to_windows(trainD, model)
-    testD = convert_to_windows(testD, model)
-    
-    print(f"  Training windows: {trainD.shape}")
-    print(f"  Testing windows: {testD.shape}")
+    try:
+        trainD = convert_to_windows(trainD, model)
+        testD = convert_to_windows(testD, model)
+        
+        print(f"  Training windows: {trainD.shape}")
+        print(f"  Testing windows: {testD.shape}")
+    except Exception as e:
+        print(f"❌ Error converting to windows: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
     
     # Get predictions
     print(f"\n🔮 Running model inference...")
-    with torch.no_grad():
-        lossT, _ = backprop(0, model, trainD, trainO, optimizer, scheduler, training=False)
-        loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False)
+    try:
+        with torch.no_grad():
+            lossT, _ = backprop(0, model, trainD, trainO, optimizer, scheduler, training=False)
+            loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False)
+    except Exception as e:
+        print(f"❌ Error during inference: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
     
     print(f"  Training loss shape: {lossT.shape}")
     print(f"  Test loss shape: {loss.shape}")
@@ -318,10 +340,16 @@ if __name__ == "__main__":
         print(f"   (Model path overridden from command line: {MODEL_PATH})")
     
     # Run test
-    result = test_model(MODEL_PATH, DATASET)
-    
-    if result is not None:
-        print(f"\n✅ Testing complete!\n")
-    else:
-        print(f"\n❌ Testing failed - see errors above\n")
+    try:
+        result = test_model(MODEL_PATH, DATASET)
+        
+        if result is not None:
+            print(f"\n✅ Testing complete!\n")
+        else:
+            print(f"\n❌ Testing failed - see errors above\n")
+            sys.exit(1)
+    except Exception as e:
+        print(f"\n❌ Unexpected error during testing: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
