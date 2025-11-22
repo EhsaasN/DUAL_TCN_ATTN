@@ -111,7 +111,8 @@ def test_model(model_path, dataset_name):
         return None
     
     try:
-        model.load_state_dict(checkpoint['model_state_dict'])
+        # Load model state - note: dynamic decoders will be recreated on first forward pass
+        model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         model.eval()
     except Exception as e:
         print(f"❌ Error loading model state: {e}")
@@ -121,15 +122,22 @@ def test_model(model_path, dataset_name):
     epoch = checkpoint.get('epoch', 'unknown')
     print(f"✅ Model loaded successfully!")
     print(f"   Training epoch: {epoch}")
+    print(f"   Note: Dynamic decoders will be recreated on first forward pass")
     
     # Create optimizer and scheduler (needed for backprop function signature)
     optimizer = torch.optim.AdamW(model.parameters(), lr=model.lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.75)
     
     if 'optimizer_state_dict' in checkpoint:
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        try:
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        except:
+            print("   Note: Could not load optimizer state (expected for dynamic decoders)")
     if 'scheduler_state_dict' in checkpoint:
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        try:
+            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        except:
+            print("   Note: Could not load scheduler state")
     
     # Convert to windows
     print(f"\n🪟 Converting data to windows...")
