@@ -314,15 +314,40 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
             windowed_labels = labels_np
             print(f"⚠️  {dataset}: Unexpected label shape {labels_np.shape}, using as-is")
     elif labels_np.shape[0] != loss.shape[0]:
-        # For other datasets, try to align
-        print(f"⚠️  Warning: Labels shape {labels_np.shape} doesn't match loss shape {loss.shape}")
-        if len(labels_np.shape) == 2 and labels_np.shape[0] < loss.shape[0]:
-            original_samples = labels_np.shape[0]
-            windows_per_sample = loss.shape[0] // original_samples
-            windowed_labels = np.repeat(labels_np, windows_per_sample, axis=0)
-            windowed_labels = windowed_labels[:loss.shape[0]]
+        # For ECG and other datasets with non-overlapping windows
+        print(f"🔄 Aligning labels: {labels_np.shape} → match loss shape {loss.shape}")
+        if len(labels_np.shape) == 2:
+            if labels_np.shape[0] > loss.shape[0]:
+                # Labels are longer than predictions (non-overlapping windows case)
+                # We need to downsample/aggregate labels to match windows
+                original_samples = labels_np.shape[0]
+                num_windows = loss.shape[0]
+                window_size = original_samples // num_windows
+                
+                # Aggregate labels: if any label in window is 1, window label is 1
+                windowed_labels = []
+                for i in range(num_windows):
+                    start_idx = i * window_size
+                    end_idx = min((i + 1) * window_size, original_samples)
+                    window_labels = labels_np[start_idx:end_idx, :]
+                    # Use max (if any timestep in window is anomaly, window is anomaly)
+                    aggregated = np.max(window_labels, axis=0, keepdims=True)
+                    windowed_labels.append(aggregated)
+                windowed_labels = np.vstack(windowed_labels)
+                print(f"   Downsampled labels from {original_samples} to {len(windowed_labels)} windows")
+            elif labels_np.shape[0] < loss.shape[0]:
+                # Labels are shorter - need to expand (repeat labels for windows)
+                original_samples = labels_np.shape[0]
+                windows_per_sample = loss.shape[0] // original_samples
+                windowed_labels = np.repeat(labels_np, windows_per_sample, axis=0)
+                windowed_labels = windowed_labels[:loss.shape[0]]
+                print(f"   Expanded labels from {original_samples} to {len(windowed_labels)} windows")
+            else:
+                windowed_labels = labels_np
         else:
             windowed_labels = labels_np
+    else:
+        windowed_labels = labels_np
     else:
         windowed_labels = labels_np
     
