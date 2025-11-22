@@ -130,8 +130,46 @@ def test_model(model_path, dataset_name):
         return None
     
     try:
-        # Load model state - note: dynamic decoders will be recreated on first forward pass
-        model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+        # Load model state with strict=False to handle dynamic decoders
+        # But manually load decoder weights if they exist
+        state_dict = checkpoint['model_state_dict']
+        
+        # First load non-decoder weights with strict=False
+        model.load_state_dict(state_dict, strict=False)
+        
+        # Then manually load decoder weights if they exist in checkpoint
+        decoder_loaded = False
+        if 'model.decoder1.0.weight' in state_dict and 'model.decoder2.0.weight' in state_dict:
+            try:
+                # Get the saved decoder dimensions
+                dec1_in_features = state_dict['model.decoder1.0.weight'].shape[1]
+                dec2_in_features = state_dict['model.decoder2.0.weight'].shape[1]
+                
+                # Import necessary modules for decoder creation
+                import torch.nn as nn
+                
+                # Recreate decoders with correct dimensions
+                model.model.decoder1 = nn.Sequential(
+                    nn.Linear(dec1_in_features, 1),
+                    nn.Sigmoid()
+                ).to(device).double()
+                
+                model.model.decoder2 = nn.Sequential(
+                    nn.Linear(dec2_in_features, 1),
+                    nn.Sigmoid()
+                ).to(device).double()
+                
+                # Now load the decoder weights
+                model.model.decoder1[0].weight.data = state_dict['model.decoder1.0.weight']
+                model.model.decoder1[0].bias.data = state_dict['model.decoder1.0.bias']
+                model.model.decoder2[0].weight.data = state_dict['model.decoder2.0.weight']
+                model.model.decoder2[0].bias.data = state_dict['model.decoder2.0.bias']
+                
+                decoder_loaded = True
+            except Exception as e:
+                print(f"⚠️  Could not load decoder weights: {e}")
+                print(f"   Decoders will be recreated on first forward pass")
+        
         model.eval()
     except Exception as e:
         print(f"❌ Error loading model state: {e}")
@@ -141,7 +179,11 @@ def test_model(model_path, dataset_name):
     epoch = checkpoint.get('epoch', 'unknown')
     print(f"✅ Model loaded successfully!")
     print(f"   Training epoch: {epoch}")
-    print(f"   Note: Dynamic decoders will be recreated on first forward pass")
+    if decoder_loaded:
+        print(f"   ✅ Decoder1 loaded: input_features={dec1_in_features}")
+        print(f"   ✅ Decoder2 loaded: input_features={dec2_in_features}")
+    else:
+        print(f"   Note: Dynamic decoders will be recreated on first forward pass")
     
     # Create optimizer and scheduler (needed for backprop function signature)
     optimizer = torch.optim.AdamW(model.parameters(), lr=model.lr)
