@@ -348,8 +348,6 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
             windowed_labels = labels_np
     else:
         windowed_labels = labels_np
-    else:
-        windowed_labels = labels_np
     
     print(f"✅ Final shapes - loss: {loss.shape}, labels: {windowed_labels.shape}")
 
