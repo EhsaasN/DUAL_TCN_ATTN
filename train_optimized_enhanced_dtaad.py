@@ -391,11 +391,18 @@ def test_optimized_model(model, trainD, testD, trainO, testO, labels, optimizer,
     return result
 
 if __name__ == "__main__":
-    # Get dataset from parser args instead of sys.argv
-    from src.parser import args as parser_args
+    # Parse command line arguments
+    import argparse
     
-    # If dataset specified in command line, use it; otherwise use parser default
-    dataset = parser_args.dataset if hasattr(parser_args, 'dataset') else 'ecg_data'
+    parser = argparse.ArgumentParser(description='Train Optimized Enhanced DTAAD')
+    parser.add_argument('--dataset',
+                        type=str,
+                        required=False,
+                        default='ecg_data',
+                        help="Dataset to train on (e.g., 'ecg_data', 'MBA', 'SMAP')")
+    
+    args = parser.parse_args()
+    dataset = args.dataset
     
     print(f"🎯 Starting training for dataset: {dataset}")
     
